@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
@@ -34,6 +32,10 @@ export function EmissionReport() {
     if (!reportRef.current) return;
 
     try {
+      // Dynamically import libraries only when needed
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).jsPDF;
+
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
