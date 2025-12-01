@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Download, LogOut, Plus, BarChart3, FileText, Leaf, Settings, Moon, Sun, LogIn } from "lucide-react"
+import { Download, LogOut, Plus, BarChart3, FileText, Leaf, Settings, Moon, Sun, LogIn, FileJson } from "lucide-react"
 import { EmissionSummaryComponent } from "@/components/emission-summary"
 import { EmissionChart } from "@/components/emission-chart"
 import { EmissionForm } from "@/components/emission-form"
 import { ChartsPage } from "@/components/charts-page"
 import { EmissionTable } from "@/components/emission-table"
+import { EmissionReport } from "@/components/emission-report"
 import { createClient } from "@/lib/supabase/client"
 import { calculateEmissionSummary } from "@/lib/emission-calculations"
 import type { EmissionEntry, EmissionSummary } from "@/types/emission"
@@ -233,7 +234,7 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
         )}
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Overview
@@ -249,6 +250,10 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
             <TabsTrigger value="all-entries" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               All Entries
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <FileJson className="h-4 w-4" />
+              Reports
             </TabsTrigger>
           </TabsList>
 
@@ -267,6 +272,10 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
 
           <TabsContent value="all-entries">
             <EmissionTable entries={entries} onDataChange={refreshData} user={user} />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <EmissionReport />
           </TabsContent>
         </Tabs>
       </main>
