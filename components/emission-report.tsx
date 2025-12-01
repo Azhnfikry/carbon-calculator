@@ -4,8 +4,25 @@ import { useEffect, useState, useRef } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 
+type Emission = {
+  created_at: string;
+  activity_description: string;
+  category: string;
+  total_emissions: number | string | null;
+};
+
+type ReportData = {
+  generated_at?: string;
+  user_name?: string;
+  user_email?: string;
+  total_entries?: number;
+  total_emissions?: number;
+  average_emissions?: number;
+  emissions?: Emission[];
+};
+
 export function EmissionReport() {
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -16,13 +33,25 @@ export function EmissionReport() {
 
   const fetchReportData = async () => {
     try {
+      setError(null);
       setLoading(true);
+
       const response = await fetch('/api/generate-report');
       if (!response.ok) throw new Error('Failed to fetch report data');
+
       const data = await response.json();
-      setReportData(data);
+
+      // Make sure emissions is always an array, even if API returns something weird
+      const safeEmissions = Array.isArray(data.emissions) ? data.emissions : [];
+
+      setReportData({
+        ...data,
+        emissions: safeEmissions,
+      });
     } catch (err) {
+      console.error('Report fetch error:', err);
       setError(err instanceof Error ? err.message : 'Error loading report');
+      setReportData(null);
     } finally {
       setLoading(false);
     }
@@ -32,7 +61,6 @@ export function EmissionReport() {
     if (!reportRef.current) return;
 
     try {
-      // Dynamically import libraries only when needed
       const html2canvas = (await import('html2canvas')).default;
       const jsPDF = (await import('jspdf')).jsPDF;
 
@@ -48,13 +76,13 @@ export function EmissionReport() {
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const imgWidth = 210; // A4 width in mm
+      const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
       let position = 0;
 
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= 297; // A4 height in mm
+      heightLeft -= 297;
 
       while (heightLeft >= 0) {
         position = heightLeft - imgHeight;
@@ -63,7 +91,9 @@ export function EmissionReport() {
         heightLeft -= 297;
       }
 
-      pdf.save(`carbon-emissions-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      pdf.save(
+        `carbon-emissions-report-${new Date().toISOString().split('T')[0]}.pdf`,
+      );
     } catch (err) {
       console.error('PDF generation error:', err);
       setError('Failed to generate PDF');
@@ -71,8 +101,13 @@ export function EmissionReport() {
   };
 
   if (loading) return <div className="text-center py-8">Loading report...</div>;
-  if (error) return <div className="text-red-600 py-8">{error}</div>;
+  if (error && !reportData)
+    return <div className="text-red-600 py-8">{error}</div>;
   if (!reportData) return <div className="text-center py-8">No data available</div>;
+
+  const emissions = Array.isArray(reportData.emissions)
+    ? reportData.emissions
+    : [];
 
   return (
     <div className="space-y-6">
@@ -88,25 +123,24 @@ export function EmissionReport() {
         </div>
       </div>
 
-      <div
-        ref={reportRef}
-        className="bg-white p-8 rounded-lg shadow-lg space-y-6"
-      >
+      <div ref={reportRef} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
         {/* Header */}
         <div className="border-b pb-6">
           <h2 className="text-2xl font-bold mb-2">Carbon Emissions Report</h2>
-          <p className="text-gray-600">Generated on {reportData.generated_at}</p>
+          <p className="text-gray-600">
+            Generated on {reportData.generated_at ?? 'N/A'}
+          </p>
         </div>
 
         {/* User Info */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-gray-500">User Name</p>
-            <p className="font-semibold">{reportData.user_name}</p>
+            <p className="font-semibold">{reportData.user_name ?? '-'}</p>
           </div>
           <div>
             <p className="text-sm text-gray-500">Email</p>
-            <p className="font-semibold">{reportData.user_email}</p>
+            <p className="font-semibold">{reportData.user_email ?? '-'}</p>
           </div>
         </div>
 
@@ -117,19 +151,19 @@ export function EmissionReport() {
             <div>
               <p className="text-sm text-gray-600">Total Entries</p>
               <p className="text-2xl font-bold text-blue-600">
-                {reportData.total_entries}
+                {reportData.total_entries ?? 0}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Total Emissions</p>
               <p className="text-2xl font-bold text-orange-600">
-                {reportData.total_emissions} kg CO₂
+                {(reportData.total_emissions ?? 0).toLocaleString()} kg CO₂
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Average per Entry</p>
               <p className="text-2xl font-bold text-green-600">
-                {reportData.average_emissions} kg CO₂
+                {reportData.average_emissions ?? 0} kg CO₂
               </p>
             </div>
           </div>
@@ -149,18 +183,37 @@ export function EmissionReport() {
                 </tr>
               </thead>
               <tbody>
-                {reportData.emissions.map((emission: any, idx: number) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">
-                      {new Date(emission.created_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2">{emission.activity_description}</td>
-                    <td className="px-4 py-2">{emission.category}</td>
-                    <td className="px-4 py-2 text-right font-semibold">
-                      {emission.total_emissions.toFixed(2)}
+                {!reportData?.emissions || reportData.emissions.length === 0 ? (
+                  <tr>
+                    <td className="px-4 py-4 text-center text-gray-500" colSpan={4}>
+                      No emissions data found.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  reportData.emissions.map((emission: any, idx: number) => {
+                    const emissionValue = emission?.total_emissions ?? 0;
+                    const asNumber = typeof emissionValue === 'number' ? emissionValue : Number(emissionValue) || 0;
+
+                    return (
+                      <tr key={idx} className="border-b hover:bg-gray-50">
+                        <td className="px-4 py-2">
+                          {emission?.created_at
+                            ? new Date(emission.created_at).toLocaleDateString()
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-2">
+                          {emission?.activity_description ?? '-'}
+                        </td>
+                        <td className="px-4 py-2">
+                          {emission?.category ?? '-'}
+                        </td>
+                        <td className="px-4 py-2 text-right font-semibold">
+                          {isNaN(asNumber) ? '0.00' : asNumber.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
