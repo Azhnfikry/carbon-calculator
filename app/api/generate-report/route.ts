@@ -60,18 +60,24 @@ export async function GET(request: NextRequest) {
 
     // Calculate emissions for each entry if not already calculated
     const processedEmissions = emissions.map((emission: any) => {
-      let total_emissions = emission.total_emissions || 0;
+      // Try to get total_emissions from different possible field names
+      let total_emissions = emission.total_emissions || 
+                           emission.co2_equivalent || 
+                           emission.co2Equivalent || 0;
       
       // If total_emissions is 0 or not set, try to calculate it
       if (!total_emissions && emission.quantity && emission.activity_type) {
         const factor = EMISSION_FACTORS[emission.activity_type] || 
-                      EMISSION_FACTORS[emission.category] || 1;
-        total_emissions = parseFloat(emission.quantity) * factor;
+                      EMISSION_FACTORS[emission.category] || 
+                      emission.emission_factor ||
+                      1;
+        total_emissions = parseFloat(emission.quantity) * parseFloat(String(factor));
       }
 
       return {
         ...emission,
         total_emissions: isNaN(total_emissions) ? 0 : parseFloat(String(total_emissions)),
+        activity_description: emission.description || emission.activity_type || '-',
       };
     });
 
