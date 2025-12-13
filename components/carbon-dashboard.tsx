@@ -9,6 +9,7 @@ import { EmissionForm } from "@/components/emission-form"
 import { ChartsPage } from "@/components/charts-page"
 import { EmissionTable } from "@/components/emission-table"
 import { EmissionReport } from "@/components/emission-report"
+import { CompanyInfoForm } from "@/components/company-info-form"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { createClient } from "@/lib/supabase/client"
 import { calculateEmissionSummary } from "@/lib/emission-calculations"
@@ -157,6 +158,8 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
         return <EmissionTable entries={entries} onDataChange={refreshData} user={user} />
       case "reports":
         return <EmissionReport />
+      case "company-info":
+        return <CompanyInfoForm user={user} />
       default:
         return null
     }
