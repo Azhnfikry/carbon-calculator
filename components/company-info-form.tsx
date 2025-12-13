@@ -43,6 +43,32 @@ const SCOPE3_CATEGORIES = {
   },
 };
 
+// Excluded Activities Options
+const EXCLUDED_ACTIVITIES_OPTIONS = [
+  { id: 'scope1_excluded', label: 'Scope 1 Activities', category: 'Scope 1' },
+  { id: 'scope2_excluded', label: 'Scope 2 Activities', category: 'Scope 2' },
+  { id: 'scope3_cat1_excluded', label: 'Scope 3 - Category 1: Purchased goods and services', category: 'Scope 3' },
+  { id: 'scope3_cat2_excluded', label: 'Scope 3 - Category 2: Capital goods', category: 'Scope 3' },
+  { id: 'scope3_cat3_excluded', label: 'Scope 3 - Category 3: Fuel- and energy-related activities', category: 'Scope 3' },
+  { id: 'scope3_cat4_excluded', label: 'Scope 3 - Category 4: Upstream transportation and distribution', category: 'Scope 3' },
+  { id: 'scope3_cat5_excluded', label: 'Scope 3 - Category 5: Waste generated in operations', category: 'Scope 3' },
+  { id: 'scope3_cat6_excluded', label: 'Scope 3 - Category 6: Business travel', category: 'Scope 3' },
+  { id: 'scope3_cat7_excluded', label: 'Scope 3 - Category 7: Employee commuting', category: 'Scope 3' },
+  { id: 'scope3_cat8_excluded', label: 'Scope 3 - Category 8: Upstream leased assets', category: 'Scope 3' },
+  { id: 'scope3_cat9_excluded', label: 'Scope 3 - Category 9: Downstream transportation and distribution', category: 'Scope 3' },
+  { id: 'scope3_cat10_excluded', label: 'Scope 3 - Category 10: Processing of sold products', category: 'Scope 3' },
+  { id: 'scope3_cat11_excluded', label: 'Scope 3 - Category 11: Use of sold products', category: 'Scope 3' },
+  { id: 'scope3_cat12_excluded', label: 'Scope 3 - Category 12: End-of-life treatment of sold products', category: 'Scope 3' },
+  { id: 'scope3_cat13_excluded', label: 'Scope 3 - Category 13: Downstream leased assets', category: 'Scope 3' },
+  { id: 'scope3_cat14_excluded', label: 'Scope 3 - Category 14: Franchises', category: 'Scope 3' },
+  { id: 'scope3_cat15_excluded', label: 'Scope 3 - Category 15: Investments', category: 'Scope 3' },
+];
+
+interface ExcludedActivity {
+  id: string;
+  reason: string;
+}
+
 interface CompanyInfo {
   id?: string;
   user_id: string;
@@ -70,6 +96,7 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedScope3, setSelectedScope3] = useState<Set<string>>(new Set());
+  const [excludedActivities, setExcludedActivities] = useState<Map<string, string>>(new Map());
 
   const [formData, setFormData] = useState<CompanyInfo>({
     user_id: user?.id || '',
@@ -97,9 +124,25 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
     }
   };
 
+  // Helper function to parse excluded_activities string to Map
+  const parseExcludedActivities = (activitiesStr: string): Map<string, string> => {
+    if (!activitiesStr) return new Map();
+    try {
+      const parsed = JSON.parse(activitiesStr);
+      return new Map(Object.entries(parsed));
+    } catch {
+      return new Map();
+    }
+  };
+
   // Helper function to convert Set to JSON string
   const serializeScope3Activities = (selectedSet: Set<string>): string => {
     return JSON.stringify(Array.from(selectedSet));
+  };
+
+  // Helper function to convert Map to JSON string
+  const serializeExcludedActivities = (activitiesMap: Map<string, string>): string => {
+    return JSON.stringify(Object.fromEntries(activitiesMap));
   };
 
   // Handle Scope 3 checkbox changes
@@ -114,6 +157,32 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
     setFormData((prev) => ({
       ...prev,
       scope3_activities: serializeScope3Activities(newSelected),
+    }));
+  };
+
+  // Handle excluded activity checkbox changes
+  const handleExcludedActivityChange = (activityId: string, checked: boolean) => {
+    const newExcluded = new Map(excludedActivities);
+    if (checked) {
+      newExcluded.set(activityId, '');
+    } else {
+      newExcluded.delete(activityId);
+    }
+    setExcludedActivities(newExcluded);
+    setFormData((prev) => ({
+      ...prev,
+      excluded_activities: serializeExcludedActivities(newExcluded),
+    }));
+  };
+
+  // Handle excluded activity reason change
+  const handleExcludedActivityReason = (activityId: string, reason: string) => {
+    const newExcluded = new Map(excludedActivities);
+    newExcluded.set(activityId, reason);
+    setExcludedActivities(newExcluded);
+    setFormData((prev) => ({
+      ...prev,
+      excluded_activities: serializeExcludedActivities(newExcluded),
     }));
   };
 
@@ -144,6 +213,7 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
             base_year: data.base_year?.toString() || new Date().getFullYear().toString(),
           });
           setSelectedScope3(parseScope3Activities(data.scope3_activities));
+          setExcludedActivities(parseExcludedActivities(data.excluded_activities));
         }
       } catch (error) {
         console.error('Error loading company info:', error);
@@ -432,19 +502,52 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
             <CardTitle>Excluded Activities</CardTitle>
             <CardDescription>Activities excluded from the report with justification</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="excluded_activities">Excluded Activities with Justification *</Label>
-              <Textarea
-                id="excluded_activities"
-                placeholder="List scope 1, 2, and 3 activities excluded with justification (one per line)"
-                value={formData.excluded_activities}
-                onChange={(e) => handleInputChange(e, 'excluded_activities')}
-                rows={4}
-                required
-              />
-              <p className="text-xs text-muted-foreground">Format: Activity name - Justification for exclusion</p>
-            </div>
+          <CardContent className="space-y-6">
+            {/* Group by scope */}
+            {['Scope 1', 'Scope 2', 'Scope 3'].map((scope) => {
+              const scopeActivities = EXCLUDED_ACTIVITIES_OPTIONS.filter((item) => item.category === scope);
+              return (
+                <div key={scope} className="space-y-3">
+                  <h3 className="font-semibold text-base text-foreground bg-gray-100 dark:bg-slate-800 px-3 py-2 rounded">
+                    {scope}
+                  </h3>
+                  <div className="space-y-4 pl-2">
+                    {scopeActivities.map((activity) => (
+                      <div key={activity.id} className="border border-gray-200 dark:border-slate-700 rounded p-4 space-y-2">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id={activity.id}
+                            checked={excludedActivities.has(activity.id)}
+                            onChange={(e) => handleExcludedActivityChange(activity.id, e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-red-600 cursor-pointer mt-1"
+                          />
+                          <label htmlFor={activity.id} className="text-sm text-foreground cursor-pointer font-medium flex-1">
+                            {activity.label}
+                          </label>
+                        </div>
+
+                        {/* Reason field appears when checkbox is selected */}
+                        {excludedActivities.has(activity.id) && (
+                          <div className="ml-7 mt-2">
+                            <Input
+                              placeholder="Provide justification for exclusion..."
+                              value={excludedActivities.get(activity.id) || ''}
+                              onChange={(e) => handleExcludedActivityReason(activity.id, e.target.value)}
+                              className="text-sm"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+
+            <p className="text-xs text-muted-foreground mt-4">
+              Select activities that are excluded from your report and provide a justification for each exclusion
+            </p>
           </CardContent>
         </Card>
 
