@@ -12,6 +12,37 @@ import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
+// Scope 3 Activities Categories
+const SCOPE3_CATEGORIES = {
+  upstream: {
+    label: 'Upstream Scope 3 Emissions',
+    items: [
+      { id: 'cat1', label: 'Category 1: Purchased goods and services' },
+      { id: 'cat2', label: 'Category 2: Capital goods' },
+      { id: 'cat3', label: 'Category 3: Fuel- and energy-related activities' },
+      { id: 'cat4', label: 'Category 4: Upstream transportation and distribution' },
+      { id: 'cat5', label: 'Category 5: Waste generated in operations' },
+      { id: 'cat6', label: 'Category 6: Business travel' },
+      { id: 'cat7', label: 'Category 7: Employee commuting' },
+      { id: 'cat8', label: 'Category 8: Upstream leased assets' },
+      { id: 'cat_other_up', label: 'Other upstream activities' },
+    ],
+  },
+  downstream: {
+    label: 'Downstream Scope 3 Emissions',
+    items: [
+      { id: 'cat9', label: 'Category 9: Downstream transportation and distribution' },
+      { id: 'cat10', label: 'Category 10: Processing of sold products' },
+      { id: 'cat11', label: 'Category 11: Use of sold products' },
+      { id: 'cat12', label: 'Category 12: End-of-life treatment of sold products' },
+      { id: 'cat13', label: 'Category 13: Downstream leased assets' },
+      { id: 'cat14', label: 'Category 14: Franchises' },
+      { id: 'cat15', label: 'Category 15: Investments' },
+      { id: 'cat_other_down', label: 'Other downstream activities' },
+    ],
+  },
+};
+
 interface CompanyInfo {
   id?: string;
   user_id: string;
@@ -38,6 +69,7 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [selectedScope3, setSelectedScope3] = useState<Set<string>>(new Set());
 
   const [formData, setFormData] = useState<CompanyInfo>({
     user_id: user?.id || '',
@@ -52,6 +84,38 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
     base_year_rationale: '',
     base_year_recalculation_policy: '',
   });
+
+  // Helper function to parse scope3_activities string to Set
+  const parseScope3Activities = (activitiesStr: string): Set<string> => {
+    if (!activitiesStr) return new Set();
+    try {
+      const parsed = JSON.parse(activitiesStr);
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      // Fallback for old comma-separated format
+      return new Set(activitiesStr.split(',').map((s) => s.trim()).filter(Boolean));
+    }
+  };
+
+  // Helper function to convert Set to JSON string
+  const serializeScope3Activities = (selectedSet: Set<string>): string => {
+    return JSON.stringify(Array.from(selectedSet));
+  };
+
+  // Handle Scope 3 checkbox changes
+  const handleScope3Change = (categoryId: string, checked: boolean) => {
+    const newSelected = new Set(selectedScope3);
+    if (checked) {
+      newSelected.add(categoryId);
+    } else {
+      newSelected.delete(categoryId);
+    }
+    setSelectedScope3(newSelected);
+    setFormData((prev) => ({
+      ...prev,
+      scope3_activities: serializeScope3Activities(newSelected),
+    }));
+  };
 
   // Load existing company info
   useEffect(() => {
@@ -79,6 +143,7 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
             ...data,
             base_year: data.base_year?.toString() || new Date().getFullYear().toString(),
           });
+          setSelectedScope3(parseScope3Activities(data.scope3_activities));
         }
       } catch (error) {
         console.error('Error loading company info:', error);
@@ -329,21 +394,35 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
         <Card>
           <CardHeader>
             <CardTitle>Scope 3 Activities</CardTitle>
-            <CardDescription>List the scope 3 activities included in your report</CardDescription>
+            <CardDescription>Select the scope 3 activities included in your report</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="scope3_activities">List of Scope 3 Activities Included *</Label>
-              <Textarea
-                id="scope3_activities"
-                placeholder="List all scope 3 activities (one per line or comma-separated)"
-                value={formData.scope3_activities}
-                onChange={(e) => handleInputChange(e, 'scope3_activities')}
-                rows={4}
-                required
-              />
-              <p className="text-xs text-muted-foreground">Examples: Business travel, Employee commuting, Purchased goods and services, etc.</p>
-            </div>
+          <CardContent className="space-y-6">
+            {Object.entries(SCOPE3_CATEGORIES).map(([key, section]) => (
+              <div key={key} className="space-y-3">
+                <h3 className="font-semibold text-base text-foreground bg-gray-100 dark:bg-slate-800 px-3 py-2 rounded">
+                  {section.label}
+                </h3>
+                <div className="grid grid-cols-1 gap-3 pl-2">
+                  {section.items.map((item) => (
+                    <div key={item.id} className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id={item.id}
+                        checked={selectedScope3.has(item.id)}
+                        onChange={(e) => handleScope3Change(item.id, e.target.checked)}
+                        className="w-4 h-4 rounded border-gray-300 text-green-600 cursor-pointer"
+                      />
+                      <label htmlFor={item.id} className="text-sm text-foreground cursor-pointer">
+                        {item.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground mt-4">
+              Select all scope 3 emission categories that are relevant to your organization
+            </p>
           </CardContent>
         </Card>
 
