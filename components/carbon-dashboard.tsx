@@ -2,21 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Download, LogOut, Plus, BarChart3, FileText, Leaf, Settings, Moon, Sun, LogIn, FileJson } from "lucide-react"
+import { Download, LogOut, LogIn, Leaf, FileText } from "lucide-react"
 import { EmissionSummaryComponent } from "@/components/emission-summary"
 import { EmissionChart } from "@/components/emission-chart"
 import { EmissionForm } from "@/components/emission-form"
 import { ChartsPage } from "@/components/charts-page"
 import { EmissionTable } from "@/components/emission-table"
 import { EmissionReport } from "@/components/emission-report"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { createClient } from "@/lib/supabase/client"
 import { calculateEmissionSummary } from "@/lib/emission-calculations"
 import type { EmissionEntry, EmissionSummary } from "@/types/emission"
 import type { User } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 interface CarbonDashboardProps {
   user: User | null // Made user optional
@@ -24,6 +22,7 @@ interface CarbonDashboardProps {
 }
 
 export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
+  const [activeTab, setActiveTab] = useState("overview")
   const [entries, setEntries] = useState<EmissionEntry[]>([])
   const [summary, setSummary] = useState<EmissionSummary>({
     totalEmissions: 0,
@@ -35,7 +34,6 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const supabase = createClient()
-  const { theme, setTheme } = useTheme()
 
   const loadEmissionEntries = async () => {
     try {
@@ -142,30 +140,54 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
     )
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <div className="space-y-6">
+            <EmissionSummaryComponent summary={summary} />
+            <EmissionChart summary={summary} />
+          </div>
+        )
+      case "add-entry":
+        return <EmissionForm onEntryAdded={refreshData} user={user} />
+      case "charts":
+        return <ChartsPage entries={entries} summary={summary} />
+      case "all-entries":
+        return <EmissionTable entries={entries} onDataChange={refreshData} user={user} />
+      case "reports":
+        return <EmissionReport />
+      default:
+        return null
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Leaf className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">Carbon Accounting</h1>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    {user ? profile?.company_name || "Personal" : "Demo Mode"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="h-3 w-3 bg-primary rounded-full" />
-                    {user ? profile?.full_name || user.email : "Guest User"}
-                  </span>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <DashboardSidebar activeTab={activeTab} onTabChange={setActiveTab} onLogout={handleLogout} />
+
+      {/* Main Content */}
+      <main className="flex-1 ml-64">
+        {/* Header */}
+        <header className="border-b border-border bg-card sticky top-0 z-40">
+          <div className="px-6 sm:px-8 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h1 className="text-xl font-semibold text-foreground">Carbon Accounting</h1>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      {user ? profile?.company_name || "Personal" : "Demo Mode"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="h-3 w-3 bg-primary rounded-full" />
+                      {user ? profile?.full_name || user.email : "Guest User"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -175,109 +197,32 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
                 <Download className="h-4 w-4" />
                 Export
               </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                    {theme === "dark" ? (
-                      <>
-                        <Sun className="h-4 w-4 mr-2" />
-                        Light Mode
-                      </>
-                    ) : (
-                      <>
-                        <Moon className="h-4 w-4 mr-2" />
-                        Dark Mode
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  {user ? (
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem onClick={handleLogin}>
-                      <LogIn className="h-4 w-4 mr-2" />
-                      Login
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {!user && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
-              <Leaf className="h-5 w-5" />
-              <div>
-                <p className="font-medium">Demo Mode</p>
-                <p className="text-sm text-blue-600 dark:text-blue-300">
-                  You're viewing demo data.{" "}
-                  <button onClick={handleLogin} className="underline hover:no-underline">
-                    Login
-                  </button>{" "}
-                  to save your own emission entries.
-                </p>
+        {/* Page Content */}
+        <div className="p-6 sm:p-8 lg:p-8">
+          {!user && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                <Leaf className="h-5 w-5" />
+                <div>
+                  <p className="font-medium">Demo Mode</p>
+                  <p className="text-sm text-blue-600 dark:text-blue-300">
+                    You're viewing demo data.{" "}
+                    <button onClick={handleLogin} className="underline hover:no-underline">
+                      Login
+                    </button>{" "}
+                    to save your own emission entries.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-5">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="add-entry" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Entry
-            </TabsTrigger>
-            <TabsTrigger value="charts" className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="all-entries" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              All Entries
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="flex items-center gap-2">
-              <FileJson className="h-4 w-4" />
-              Reports
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <EmissionSummaryComponent summary={summary} />
-            <EmissionChart summary={summary} />
-          </TabsContent>
-
-          <TabsContent value="add-entry">
-            <EmissionForm onEntryAdded={refreshData} user={user} />
-          </TabsContent>
-
-          <TabsContent value="charts">
-            <ChartsPage entries={entries} summary={summary} />
-          </TabsContent>
-
-          <TabsContent value="all-entries">
-            <EmissionTable entries={entries} onDataChange={refreshData} user={user} />
-          </TabsContent>
-
-          <TabsContent value="reports">
-            <EmissionReport />
-          </TabsContent>
-        </Tabs>
+          {renderContent()}
+        </div>
       </main>
     </div>
   )
