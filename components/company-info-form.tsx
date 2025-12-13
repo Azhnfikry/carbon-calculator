@@ -68,12 +68,17 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
           .eq('user_id', user.id)
           .single();
 
+        // PGRST116 = no rows returned (this is expected for new users)
         if (error && error.code !== 'PGRST116') {
-          throw error;
+          console.warn('Warning loading company info:', error);
+          // Don't throw - just continue with empty form
         }
 
         if (data) {
-          setFormData(data);
+          setFormData({
+            ...data,
+            base_year: data.base_year?.toString() || new Date().getFullYear().toString(),
+          });
         }
       } catch (error) {
         console.error('Error loading company info:', error);
@@ -112,7 +117,16 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
     setIsSaving(true);
     try {
       const dataToSave = {
-        ...formData,
+        company_name: formData.company_name,
+        company_description: formData.company_description,
+        consolidation_approach: formData.consolidation_approach,
+        business_description: formData.business_description,
+        reporting_period: formData.reporting_period,
+        scope3_activities: formData.scope3_activities,
+        excluded_activities: formData.excluded_activities,
+        base_year: parseInt(formData.base_year) || new Date().getFullYear(),
+        base_year_rationale: formData.base_year_rationale,
+        base_year_recalculation_policy: formData.base_year_recalculation_policy,
         user_id: user.id,
       };
 
@@ -121,9 +135,13 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
         const { error } = await supabase
           .from('company_info')
           .update(dataToSave)
-          .eq('id', formData.id);
+          .eq('id', formData.id)
+          .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
         setMessage({ type: 'success', text: 'Company information updated successfully!' });
       } else {
         // Insert new
@@ -133,17 +151,21 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
         if (data) {
-          setFormData(data);
+          setFormData({ ...formData, id: data.id });
         }
         setMessage({ type: 'success', text: 'Company information saved successfully!' });
       }
 
       setTimeout(() => setMessage(null), 5000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving company info:', error);
-      setMessage({ type: 'error', text: 'Failed to save company information. Please try again.' });
+      const errorMessage = error?.message || 'Failed to save company information. Please try again.';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsSaving(false);
     }
