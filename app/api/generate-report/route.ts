@@ -36,8 +36,13 @@ export async function GET(request: NextRequest) {
       error: authError,
     } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (authError) {
+      console.error('Auth error:', authError);
+      return NextResponse.json({ error: 'Authentication error: ' + authError.message }, { status: 401 });
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
     }
 
     // Get user's emissions
@@ -48,15 +53,44 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Emissions fetch error:', error);
+      return NextResponse.json({ error: 'Failed to fetch emissions: ' + error.message }, { status: 500 });
+    }
+
+    if (!emissions) {
+      console.warn('No emissions found for user:', user.id);
+      // Return empty report with no emissions
+      const emptyReport = {
+        generated_at: new Date().toLocaleString(),
+        company_info: {
+          name: 'N/A',
+          description: '',
+          consolidation_approach: '',
+          business_description: '',
+          reporting_period: '',
+          base_year: new Date().getFullYear(),
+          base_year_rationale: '',
+        },
+        user_name: 'User',
+        user_email: user.email || 'N/A',
+        scope_1_total: 0,
+        scope_2_total: 0,
+        scope_3_total: 0,
+        total_emissions: 0,
+      };
+      return NextResponse.json(emptyReport);
     }
 
     // Get user profile for report header
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('full_name, email')
       .eq('id', user.id)
       .single();
+
+    if (profileError) {
+      console.warn('Profile fetch warning:', profileError.message);
+    }
 
     // Calculate emissions for each entry if not already calculated
     const processedEmissions = emissions.map((emission: any) => {
@@ -82,11 +116,15 @@ export async function GET(request: NextRequest) {
     });
 
     // Get company info
-    const { data: companyInfo } = await supabase
+    const { data: companyInfo, error: companyError } = await supabase
       .from('company_info')
       .select('*')
       .eq('user_id', user.id)
       .single();
+
+    if (companyError) {
+      console.warn('Company info fetch warning:', companyError.message);
+    }
 
     // Calculate emissions by scope (1, 2, and 3)
     const scope1Emissions = processedEmissions
@@ -125,9 +163,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(reportData);
   } catch (error) {
-    console.error('Report generation error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('Report generation error:', errorMessage, error);
     return NextResponse.json(
-      { error: 'Failed to generate report' },
+      { error: 'Failed to generate report: ' + errorMessage },
       { status: 500 }
     );
   }
