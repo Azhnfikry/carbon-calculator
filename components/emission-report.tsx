@@ -42,12 +42,21 @@ export function EmissionReport() {
       setError(null);
       setLoading(true);
 
-      const response = await fetch('/api/generate-report');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch report data: ${response.statusText}`);
-      }
+      const response = await fetch('/api/generate-report', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for authentication
+      });
 
       const data = await response.json();
+
+      if (!response.ok) {
+        // Check if error message is in the response
+        const errorMsg = data.error || `Failed to fetch report data: ${response.statusText}`;
+        throw new Error(errorMsg);
+      }
 
       // Validate and normalize the data
       const normalizedData: ReportData = {
