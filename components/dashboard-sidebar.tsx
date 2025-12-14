@@ -17,11 +17,11 @@ export function DashboardSidebar({ activeTab, onTabChange, onLogout }: Dashboard
   const router = useRouter();
 
   const menuItems = [
+    { id: 'company-info', label: 'Company Info', icon: Building2 },
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'add-entry', label: 'Add Entry', icon: Plus },
     { id: 'charts', label: 'Analytics', icon: BarChart3 },
     { id: 'all-entries', label: 'All Entries', icon: FileText },
-    { id: 'company-info', label: 'Company Info', icon: Building2 },
     { id: 'reports', label: 'Reports', icon: FileJson },
   ];
 
