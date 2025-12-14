@@ -18,6 +18,8 @@ const EMISSION_FACTORS: Record<string, number> = {
 export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies();
+    
+    // Create Supabase client with proper cookie handling
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -26,24 +28,46 @@ export async function GET(request: NextRequest) {
           getAll() {
             return cookieStore.getAll();
           },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch (error) {
+              console.warn('Cookie setting error:', error);
+            }
+          },
         },
       }
     );
 
-    // Get current user
+    // Get current user with detailed error handling
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
     if (authError) {
-      console.error('Auth error:', authError);
-      return NextResponse.json({ error: 'Authentication error: ' + authError.message }, { status: 401 });
+      console.error('Auth error details:', {
+        message: authError.message,
+        status: authError.status,
+        code: authError.code,
+      });
+      return NextResponse.json(
+        { error: `Authentication failed: ${authError.message}` },
+        { status: 401 }
+      );
     }
 
     if (!user) {
-      return NextResponse.json({ error: 'User not authenticated' }, { status: 401 });
+      console.error('No user found in session');
+      return NextResponse.json(
+        { error: 'User session not found. Please log in again.' },
+        { status: 401 }
+      );
     }
+
+    console.log('Authenticated user:', user.id);
 
     // Get user's emissions
     const { data: emissions, error } = await supabase
