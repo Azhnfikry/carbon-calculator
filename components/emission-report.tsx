@@ -2,31 +2,28 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Download } from 'lucide-react';
 
-type Emission = {
-  created_at: string;
-  activity_description: string;
-  category: string;
-  total_emissions: number | string | null;
+type CompanyInfo = {
+  name: string;
+  description: string;
+  consolidation_approach: string;
+  business_description: string;
+  reporting_period: string;
+  base_year: number;
+  base_year_rationale: string;
 };
 
 type ReportData = {
   generated_at: string;
+  company_info: CompanyInfo;
   user_name: string;
   user_email: string;
-  total_entries: number;
-  total_emissions: number;
-  average_emissions: number;
-  emissions: Emission[];
+  scope_2_total: number;
+  scope_3_total: number;
+  combined_total: number;
 };
-
-declare global {
-  interface Window {
-    html2canvas: any;
-    jsPDF: any;
-  }
-}
 
 export function EmissionReport() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -54,12 +51,20 @@ export function EmissionReport() {
       // Validate and normalize the data
       const normalizedData: ReportData = {
         generated_at: data.generated_at || new Date().toISOString(),
+        company_info: {
+          name: data.company_info?.name || 'Not Provided',
+          description: data.company_info?.description || '',
+          consolidation_approach: data.company_info?.consolidation_approach || '',
+          business_description: data.company_info?.business_description || '',
+          reporting_period: data.company_info?.reporting_period || '',
+          base_year: data.company_info?.base_year || new Date().getFullYear(),
+          base_year_rationale: data.company_info?.base_year_rationale || '',
+        },
         user_name: data.user_name || 'Unknown User',
         user_email: data.user_email || 'N/A',
-        total_entries: Number(data.total_entries) || 0,
-        total_emissions: Number(data.total_emissions) || 0,
-        average_emissions: Number(data.average_emissions) || 0,
-        emissions: Array.isArray(data.emissions) ? data.emissions : [],
+        scope_2_total: Number(data.scope_2_total) || 0,
+        scope_3_total: Number(data.scope_3_total) || 0,
+        combined_total: Number(data.combined_total) || 0,
       };
 
       setReportData(normalizedData);
@@ -82,9 +87,9 @@ export function EmissionReport() {
       setDownloading(true);
       setError(null);
 
-      // Simple approach: use print/browser print-to-PDF
+      // Use browser print-to-PDF
       const printContent = reportRef.current.innerHTML;
-      const printWindow = window.open('', '', 'width=900,height=700');
+      const printWindow = window.open('', '', 'width=900,height=1200');
       
       if (!printWindow) {
         throw new Error('Could not open print window. Check your browser settings.');
@@ -96,213 +101,198 @@ export function EmissionReport() {
         <head>
           <title>Carbon Emissions Report</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f2f2f2; }
-            .gradient { background: linear-gradient(to right, #f0f9ff, #e0e7ff); padding: 20px; margin: 20px 0; border-radius: 8px; }
-            h2 { color: #333; }
-            .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-top: 15px; }
-            .stat-box { background: white; padding: 15px; border-radius: 5px; }
-            .stat-value { font-size: 24px; font-weight: bold; color: #1f2937; }
-            .stat-label { font-size: 12px; color: #6b7280; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: white; }
+            .report-container { max-width: 900px; margin: 0 auto; }
+            .header { border-bottom: 3px solid #16a34a; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 28px; font-weight: bold; color: #1f2937; margin-bottom: 5px; }
+            .subtitle { color: #6b7280; font-size: 14px; }
+            .company-section { background: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+            .company-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
+            .info-row { display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-bottom: 12px; }
+            .info-label { font-weight: 600; color: #374151; }
+            .info-value { color: #6b7280; }
+            .emissions-section { margin-bottom: 30px; }
+            .emissions-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 20px; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
+            .emissions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+            .emission-card { background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center; }
+            .emission-label { color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
+            .emission-value { font-size: 28px; font-weight: bold; color: #16a34a; }
+            .emission-unit { color: #9ca3af; font-size: 12px; margin-top: 4px; }
+            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; text-align: center; }
+            @media print { body { padding: 0; } }
           </style>
         </head>
         <body>
           ${printContent}
-          <script>
-            window.print();
-            window.close();
-          </script>
         </body>
         </html>
       `);
       printWindow.document.close();
+      printWindow.focus();
+
+      // Trigger print dialog after content is loaded
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+        setDownloading(false);
+      }, 250);
     } catch (err) {
-      console.error('Print error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to open print dialog');
-    } finally {
+      setError(err instanceof Error ? err.message : 'Error downloading PDF');
       setDownloading(false);
     }
   };
 
-  const formatEmissionValue = (value: number | string | null): string => {
-    if (value === null || value === undefined) return '0.00';
-    const numValue = typeof value === 'number' ? value : parseFloat(String(value));
-    return isNaN(numValue) ? '0.00' : numValue.toFixed(2);
-  };
-
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-10 bg-gray-200 rounded w-1/3"></div>
-        <div className="h-64 bg-gray-200 rounded"></div>
-        <div className="h-96 bg-gray-200 rounded"></div>
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading report...</p>
+        </div>
       </div>
     );
   }
 
   if (error && !reportData) {
     return (
-      <div className="text-center py-8">
-        <div className="text-red-600 mb-4">{error}</div>
-        <Button onClick={fetchReportData} variant="outline">
-          Try Again
-        </Button>
-      </div>
+      <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
+        <AlertCircle className="h-4 w-4 text-red-600" />
+        <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
+      </Alert>
     );
   }
 
   if (!reportData) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-600 mb-4">No data available</p>
-        <Button onClick={fetchReportData} variant="outline">
-          Load Report
-        </Button>
-      </div>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>No report data available. Please add company info and emission entries first.</AlertDescription>
+      </Alert>
     );
   }
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Carbon Emissions Report</h2>
+          <p className="text-muted-foreground text-sm">Scope 2 & 3 Cumulative Summary</p>
         </div>
-      )}
-
-      <div className="flex gap-4 justify-between items-center flex-wrap">
-        <h1 className="text-3xl font-bold">Carbon Emissions Report</h1>
-        <div className="flex gap-2">
-          <Button onClick={fetchReportData} variant="outline" disabled={loading || downloading}>
-            Refresh
-          </Button>
-          <Button
-            onClick={downloadPDF}
-            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
-            disabled={loading || downloading}
-            aria-label="Download report as PDF"
-          >
-            {downloading ? '⏳ Generating PDF...' : '📥 Download PDF'}
-          </Button>
-        </div>
+        <Button
+          onClick={downloadPDF}
+          disabled={downloading}
+          className="bg-green-600 hover:bg-green-700 flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          {downloading ? 'Generating...' : 'Download PDF'}
+        </Button>
       </div>
 
-      <div ref={reportRef} className="bg-white p-8 rounded-lg shadow-lg space-y-6">
+      {/* Printable Report */}
+      <div ref={reportRef} className="bg-white dark:bg-slate-950 p-8 rounded-lg border border-gray-200 dark:border-slate-800 space-y-6">
         {/* Header */}
-        <div className="border-b pb-6">
-          <h2 className="text-2xl font-bold mb-2">Carbon Emissions Report</h2>
-          <p className="text-gray-600">
-            Generated on {new Date(reportData.generated_at).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </p>
-        </div>
-
-        {/* User Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">User Name</p>
-            <p className="font-semibold">{reportData.user_name}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Email</p>
-            <p className="font-semibold">{reportData.user_email}</p>
+        <div className="border-b-4 border-green-600 pb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Carbon Emissions Report</h1>
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+            <span>Generated: {reportData.generated_at}</span>
+            <span>Prepared for: {reportData.user_name}</span>
           </div>
         </div>
 
-        {/* Summary Statistics */}
-        <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50">
-          <h3 className="text-lg font-semibold mb-4">Summary Statistics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Company Information Section */}
+        <div className="bg-gray-50 dark:bg-slate-900 p-6 rounded-lg space-y-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-green-600 pb-3">
+            Part 1: Company Information
+          </h2>
+
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <p className="text-sm text-gray-600">Total Entries</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {reportData.total_entries.toLocaleString()}
-              </p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Company Name</p>
+              <p className="text-lg text-gray-900 dark:text-white">{reportData.company_info.name}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Emissions</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {reportData.total_emissions.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })} kg CO₂
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Average per Entry</p>
-              <p className="text-2xl font-bold text-green-600">
-                {reportData.average_emissions.toFixed(2)} kg CO₂
-              </p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Reporting Period</p>
+              <p className="text-lg text-gray-900 dark:text-white">{reportData.company_info.reporting_period || 'Not specified'}</p>
             </div>
           </div>
-        </Card>
 
-        {/* Emissions Table */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Recent Emissions</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left border-b">Date</th>
-                  <th className="px-4 py-2 text-left border-b">Activity</th>
-                  <th className="px-4 py-2 text-left border-b">Category</th>
-                  <th className="px-4 py-2 text-right border-b">Emissions (kg CO₂)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reportData.emissions.length === 0 ? (
-                  <tr>
-                    <td className="px-4 py-8 text-center text-gray-500" colSpan={4}>
-                      No emissions data found. Start tracking your carbon footprint!
-                    </td>
-                  </tr>
-                ) : (
-                  reportData.emissions.map((emission: Emission, idx: number) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-2">
-                        {emission.created_at
-                          ? new Date(emission.created_at).toLocaleDateString()
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-2">
-                        {emission.activity_description || '-'}
-                      </td>
-                      <td className="px-4 py-2">
-                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                          {emission.category || 'Uncategorized'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-right font-semibold">
-                        {formatEmissionValue(emission.total_emissions)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          {reportData.company_info.description && (
+            <div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Description</p>
+              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.description}</p>
+            </div>
+          )}
+
+          {reportData.company_info.business_description && (
+            <div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Business Description</p>
+              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.business_description}</p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Consolidation Approach</p>
+              <p className="text-gray-700 dark:text-gray-300 capitalize">
+                {reportData.company_info.consolidation_approach?.replace('-', ' ') || 'Not specified'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Base Year</p>
+              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.base_year}</p>
+            </div>
+          </div>
+
+          {reportData.company_info.base_year_rationale && (
+            <div>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Base Year Rationale</p>
+              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.base_year_rationale}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Emissions Summary Section */}
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-green-600 pb-3">
+            Part 2: Cumulative Emissions Summary
+          </h2>
+
+          {/* Emissions Cards */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Scope 2 Card */}
+            <div className="border-2 border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20 rounded-lg p-6 text-center">
+              <p className="text-sm font-bold text-green-700 dark:text-green-400 uppercase mb-2">Scope 2 Emissions</p>
+              <p className="text-4xl font-bold text-green-600 dark:text-green-400">{reportData.scope_2_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-xs text-green-600 dark:text-green-500 mt-2">kg CO₂e</p>
+            </div>
+
+            {/* Scope 3 Card */}
+            <div className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-6 text-center">
+              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase mb-2">Scope 3 Emissions</p>
+              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">{reportData.scope_3_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-xs text-blue-600 dark:text-blue-500 mt-2">kg CO₂e</p>
+            </div>
+
+            {/* Combined Total Card */}
+            <div className="border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/20 rounded-lg p-6 text-center">
+              <p className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase mb-2">Combined Total</p>
+              <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">{reportData.combined_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-xs text-purple-600 dark:text-purple-500 mt-2">kg CO₂e</p>
+            </div>
+          </div>
+
+          {/* Summary Note */}
+          <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg mt-4">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              <strong>Note:</strong> This report shows cumulative emissions for Scope 2 (Indirect Energy) and Scope 3 (Other Indirect) emissions only.
+            </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t pt-6 text-center text-xs text-gray-500">
-          <p>This is an automated report generated by Carbon Calculator</p>
-          <p className="mt-1">
-            For more information, visit:{' '}
-            <a
-              href="https://carbon-calculator-khaki-eta.vercel.app"
-              className="text-blue-600 hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              carbon-calculator-khaki-eta.vercel.app
-            </a>
-          </p>
+        <div className="border-t pt-4 text-center text-xs text-gray-600 dark:text-gray-400">
+          <p>© {new Date().getFullYear()} Carbon Calculator Report</p>
         </div>
       </div>
     </div>

@@ -81,19 +81,41 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Calculate totals
-    const totalEmissions = processedEmissions.reduce((sum: number, e: any) => sum + (e.total_emissions || 0), 0);
-    const avgEmissions = processedEmissions.length > 0 ? totalEmissions / processedEmissions.length : 0;
+    // Get company info
+    const { data: companyInfo } = await supabase
+      .from('company_info')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    // Calculate emissions by scope (2 and 3 only)
+    const scope2Emissions = processedEmissions
+      .filter((e: any) => e.scope === 2)
+      .reduce((sum: number, e: any) => sum + (e.total_emissions || 0), 0);
+
+    const scope3Emissions = processedEmissions
+      .filter((e: any) => e.scope === 3)
+      .reduce((sum: number, e: any) => sum + (e.total_emissions || 0), 0);
+
+    const combinedTotal = scope2Emissions + scope3Emissions;
 
     // Generate report data
     const reportData = {
       generated_at: new Date().toLocaleString(),
+      company_info: {
+        name: companyInfo?.company_name || 'N/A',
+        description: companyInfo?.company_description || '',
+        consolidation_approach: companyInfo?.consolidation_approach || '',
+        business_description: companyInfo?.business_description || '',
+        reporting_period: companyInfo?.reporting_period || '',
+        base_year: companyInfo?.base_year || new Date().getFullYear(),
+        base_year_rationale: companyInfo?.base_year_rationale || '',
+      },
       user_name: profile?.full_name || 'User',
       user_email: profile?.email || user.email,
-      total_entries: processedEmissions.length,
-      total_emissions: totalEmissions.toFixed(2),
-      average_emissions: avgEmissions.toFixed(2),
-      emissions: processedEmissions.slice(0, 50), // Last 50 entries
+      scope_2_total: parseFloat(scope2Emissions.toFixed(2)),
+      scope_3_total: parseFloat(scope3Emissions.toFixed(2)),
+      combined_total: parseFloat(combinedTotal.toFixed(2)),
     };
 
     return NextResponse.json(reportData);
