@@ -88,7 +88,11 @@ export async function GET(request: NextRequest) {
       .eq('user_id', user.id)
       .single();
 
-    // Calculate emissions by scope (2 and 3 only)
+    // Calculate emissions by scope (1, 2, and 3)
+    const scope1Emissions = processedEmissions
+      .filter((e: any) => e.scope === 1)
+      .reduce((sum: number, e: any) => sum + (e.total_emissions || 0), 0);
+
     const scope2Emissions = processedEmissions
       .filter((e: any) => e.scope === 2)
       .reduce((sum: number, e: any) => sum + (e.total_emissions || 0), 0);
@@ -97,7 +101,7 @@ export async function GET(request: NextRequest) {
       .filter((e: any) => e.scope === 3)
       .reduce((sum: number, e: any) => sum + (e.total_emissions || 0), 0);
 
-    const combinedTotal = scope2Emissions + scope3Emissions;
+    const totalEmissions = scope1Emissions + scope2Emissions + scope3Emissions;
 
     // Generate report data
     const reportData = {
@@ -113,9 +117,10 @@ export async function GET(request: NextRequest) {
       },
       user_name: profile?.full_name || 'User',
       user_email: profile?.email || user.email,
+      scope_1_total: parseFloat(scope1Emissions.toFixed(2)),
       scope_2_total: parseFloat(scope2Emissions.toFixed(2)),
       scope_3_total: parseFloat(scope3Emissions.toFixed(2)),
-      combined_total: parseFloat(combinedTotal.toFixed(2)),
+      total_emissions: parseFloat(totalEmissions.toFixed(2)),
     };
 
     return NextResponse.json(reportData);

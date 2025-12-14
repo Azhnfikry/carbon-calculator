@@ -20,9 +20,10 @@ type ReportData = {
   company_info: CompanyInfo;
   user_name: string;
   user_email: string;
+  scope_1_total: number;
   scope_2_total: number;
   scope_3_total: number;
-  combined_total: number;
+  total_emissions: number;
 };
 
 export function EmissionReport() {
@@ -62,9 +63,10 @@ export function EmissionReport() {
         },
         user_name: data.user_name || 'Unknown User',
         user_email: data.user_email || 'N/A',
+        scope_1_total: Number(data.scope_1_total) || 0,
         scope_2_total: Number(data.scope_2_total) || 0,
         scope_3_total: Number(data.scope_3_total) || 0,
-        combined_total: Number(data.combined_total) || 0,
+        total_emissions: Number(data.total_emissions) || 0,
       };
 
       setReportData(normalizedData);
@@ -176,8 +178,8 @@ export function EmissionReport() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Carbon Emissions Report</h2>
-          <p className="text-muted-foreground text-sm">Scope 2 & 3 Cumulative Summary</p>
+          <h2 className="text-2xl font-bold">GHG Emissions Inventory Report</h2>
+          <p className="text-muted-foreground text-sm">Scope 1, 2 & 3 Cumulative Summary</p>
         </div>
         <Button
           onClick={downloadPDF}
@@ -255,29 +257,40 @@ export function EmissionReport() {
         {/* Emissions Summary Section */}
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-green-600 pb-3">
-            Part 2: Cumulative Emissions Summary
+            Part 2: GHG Emissions Summary
           </h2>
 
-          {/* Emissions Cards */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Emissions Cards - All Three Scopes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Scope 1 Card */}
+            <div className="border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 rounded-lg p-6">
+              <p className="text-sm font-bold text-red-700 dark:text-red-400 uppercase mb-2">Scope 1</p>
+              <p className="text-sm text-red-600 dark:text-red-300 mb-3">Direct Emissions</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{reportData.scope_1_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-xs text-red-600 dark:text-red-500 mt-2">kg CO₂e</p>
+            </div>
+
             {/* Scope 2 Card */}
-            <div className="border-2 border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20 rounded-lg p-6 text-center">
-              <p className="text-sm font-bold text-green-700 dark:text-green-400 uppercase mb-2">Scope 2 Emissions</p>
-              <p className="text-4xl font-bold text-green-600 dark:text-green-400">{reportData.scope_2_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              <p className="text-xs text-green-600 dark:text-green-500 mt-2">kg CO₂e</p>
+            <div className="border-2 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20 rounded-lg p-6">
+              <p className="text-sm font-bold text-amber-700 dark:text-amber-400 uppercase mb-2">Scope 2</p>
+              <p className="text-sm text-amber-600 dark:text-amber-300 mb-3">Indirect Energy</p>
+              <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{reportData.scope_2_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">kg CO₂e</p>
             </div>
 
             {/* Scope 3 Card */}
-            <div className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-6 text-center">
-              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase mb-2">Scope 3 Emissions</p>
-              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">{reportData.scope_3_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            <div className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-6">
+              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase mb-2">Scope 3</p>
+              <p className="text-sm text-blue-600 dark:text-blue-300 mb-3">Other Indirect</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{reportData.scope_3_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-blue-600 dark:text-blue-500 mt-2">kg CO₂e</p>
             </div>
 
-            {/* Combined Total Card */}
-            <div className="border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/20 rounded-lg p-6 text-center">
-              <p className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase mb-2">Combined Total</p>
-              <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">{reportData.combined_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+            {/* Total Emissions Card */}
+            <div className="border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/20 rounded-lg p-6">
+              <p className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase mb-2">Total</p>
+              <p className="text-sm text-purple-600 dark:text-purple-300 mb-3">All Scopes</p>
+              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{reportData.total_emissions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-purple-600 dark:text-purple-500 mt-2">kg CO₂e</p>
             </div>
           </div>
@@ -285,7 +298,7 @@ export function EmissionReport() {
           {/* Summary Note */}
           <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg mt-4">
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              <strong>Note:</strong> This report shows cumulative emissions for Scope 2 (Indirect Energy) and Scope 3 (Other Indirect) emissions only.
+              <strong>Scope 1:</strong> Direct emissions from owned or controlled sources. <strong>Scope 2:</strong> Indirect emissions from purchased electricity, steam, or heating. <strong>Scope 3:</strong> Other indirect emissions from the value chain.
             </p>
           </div>
         </div>
