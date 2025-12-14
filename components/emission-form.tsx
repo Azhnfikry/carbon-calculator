@@ -308,11 +308,14 @@ export function EmissionForm({ onEntryAdded, user }: EmissionFormProps) {
 								className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
 							>
 								<option value="">{scope ? "Select activity type" : "Select scope first"}</option>
-								{filteredActivityTypes.map((type) => (
-									<option key={type} value={type}>
-										{type}
-									</option>
-								))}
+								{filteredActivityTypes.map((type) => {
+									const unit = emissionFactors.find(f => f.activity_type === type)?.unit || '';
+									return (
+										<option key={type} value={type}>
+											{type} {unit ? `(${unit})` : ''}
+										</option>
+									);
+								})}
 							</select>
 						</div>
 
