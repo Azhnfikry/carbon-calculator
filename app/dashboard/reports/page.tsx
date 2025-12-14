@@ -8,8 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
 export default function ReportsPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -20,25 +19,30 @@ export default function ReportsPage() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        if (!session) {
-          // Redirect to login if not authenticated
-          router.push('/auth/login');
-          return;
+        if (session) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
-
-        setIsAuthenticated(true);
       } catch (error) {
         console.error('Auth check error:', error);
-        router.push('/auth/login');
-      } finally {
-        setIsLoading(false);
+        setIsAuthenticated(false);
       }
     };
 
     checkAuth();
-  }, [supabase, router]);
 
-  if (isLoading) {
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [supabase]);
+
+  if (isAuthenticated === null) {
     return (
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-center min-h-96">
@@ -54,9 +58,11 @@ export default function ReportsPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please log in to view your reports.
+            Please log in to view your reports. Redirect to login page...
           </AlertDescription>
         </Alert>
+        {/* Redirect after a short delay */}
+        {setTimeout(() => router.push('/auth/login'), 2000)}
       </div>
     );
   }
