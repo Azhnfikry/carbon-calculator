@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm run build",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "GOOGLE_GENERATIVE_AI_API_KEY": "@google_api_key"
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "runtime": "nodejs@20.x",
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  },
+  "regions": ["iad"]
+}
