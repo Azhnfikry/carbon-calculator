@@ -1,5 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Only import Gemini if API key is available
+let generateText: any = null;
+let google: any = null;
+
+if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+  try {
+    const aiModule = require('ai');
+    const googleModule = require('@ai-sdk/google');
+    generateText = aiModule.generateText;
+    google = googleModule.google;
+  } catch (e) {
+    console.warn('AI modules not available');
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -20,7 +35,7 @@ export async function POST(request: NextRequest) {
         const textContent = await file.text();
         const extractedData = parseCSVContent(textContent);
         if (extractedData && extractedData.length > 0) {
-          console.log('Successfully extracted from CSV:', extractedData);
+          console.log('✅ Successfully extracted from CSV:', extractedData);
           return NextResponse.json({
             success: true,
             emissions: extractedData,
@@ -32,20 +47,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For Excel files, provide instruction
+    // For other file types (PDF, Excel, DOCX), try Gemini if API key is available
+    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY && generateText && google) {
+      console.log('🤖 Using Gemini API for', fileExtension, 'extraction...');
+      try {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const base64File = buffer.toString('base64');
+        const extractedData = await processFileWithGemini(file, base64File);
+        
+        if (extractedData && extractedData.length > 0) {
+          console.log('✅ Successfully extracted with Gemini:', extractedData);
+          return NextResponse.json({
+            success: true,
+            emissions: extractedData,
+            message: `Extracted ${extractedData.length} emission entries using Gemini`
+          });
+        }
+      } catch (e) {
+        console.error('Gemini extraction error:', e);
+      }
+    }
+
+    // Fallback message
     if (fileExtension === 'xlsx' || fileExtension === 'xls') {
       return NextResponse.json({
         success: false,
-        error: 'Please export your Excel file as CSV first. Upload the CSV file for best results.',
+        error: 'Excel extraction requires Google API key. Convert to CSV or configure GOOGLE_GENERATIVE_AI_API_KEY.',
         hint: 'File → Export → CSV format'
       }, { status: 400 });
     }
 
-    // Fallback
+    if (fileExtension === 'pdf' || fileExtension === 'docx') {
+      return NextResponse.json({
+        success: false,
+        error: 'PDF/DOCX extraction requires Google Gemini API. Configure GOOGLE_GENERATIVE_AI_API_KEY environment variable.',
+        hint: 'Or convert your file to CSV for immediate support'
+      }, { status: 400 });
+    }
+
     return NextResponse.json({
       success: false,
-      error: 'Please upload a CSV file. Convert your data to CSV format.',
-      hint: 'Open in Excel, then Save As → CSV format'
+      error: 'Unsupported file format. Supported: CSV, PDF, DOCX, Excel',
+      hint: 'CSV files work immediately. Other formats require Google API key.'
     }, { status: 400 });
 
   } catch (error: any) {
@@ -142,4 +186,101 @@ function parseCSVContent(csvText: string): any[] {
     console.error('Error parsing CSV:', e);
     return [];
   }
+}
+
+async function processFileWithGemini(file: File, base64File: string): Promise<any[]> {
+  if (!generateText || !google) {
+    console.error('Gemini not available');
+    return [];
+  }
+
+  try {
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+    const mimeType = file.type;
+
+    const prompt = `You are a carbon accounting expert. Extract carbon emission data from this document.
+
+REQUIRED FIELDS for each emission entry:
+- Activity Type: The type of activity (e.g., Electricity, Diesel, Business Travel - Air)
+- Scope: The GHG Protocol scope (1, 2, or 3)
+- Quantity: The numerical value
+- Unit: The measurement unit (kWh, liters, km, etc.)
+
+VALID ACTIVITY TYPES:
+Scope 1: Natural Gas, Diesel, Gasoline, Petrol, Propane, Coal, Heating Oil, Refrigerants - R134a, Refrigerants - R410A
+Scope 2: Electricity, Steam
+Scope 3: Business Travel - Air, Business Travel - Car, Business Travel - Rail, Company Vehicle Travel, Hotel Stay, Paper, Water Supply, Waste to Landfill, Waste Recycling, Air Travel (Economy), Air Travel (Business)
+
+Extract ALL emissions found and return as JSON array:
+[
+  {
+    "Activity Type": "Electricity",
+    "Scope": "2",
+    "Quantity": "12500",
+    "Unit": "kWh"
+  }
+]
+
+File: ${file.name}`;
+
+    const { text } = await generateText({
+      model: google("gemini-2.0-flash"),
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "file", data: base64File, mediaType: mimeType }
+          ]
+        }
+      ]
+    });
+
+    return parseGeminiResponse(text);
+  } catch (error) {
+    console.error('Gemini API error:', error);
+    return [];
+  }
+}
+
+function parseGeminiResponse(response: string): any[] {
+  try {
+    // Remove markdown code blocks
+    const cleanedResponse = response
+      .replace(/```json\s*/g, '')
+      .replace(/```\s*/g, '')
+      .trim();
+
+    // Try to extract JSON array
+    const jsonMatch = cleanedResponse.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      console.warn('No JSON array found in response');
+      return [];
+    }
+
+    const jsonData = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(jsonData)) {
+      console.warn('Parsed data is not an array');
+      return [];
+    }
+
+    return jsonData.map((item: any) => ({
+      'Activity Type': item['Activity Type'] || item.activity_type || 'Unknown',
+      'Scope': normalizeScope(item['Scope'] || item.scope),
+      'Quantity': String(item['Quantity'] || item.quantity || '1'),
+      'Unit': item['Unit'] || item.unit || 'unknown'
+    }));
+  } catch (e) {
+    console.error('Error parsing Gemini response:', e);
+    return [];
+  }
+}
+
+function normalizeScope(scope: any): string {
+  if (!scope) return 'Unknown';
+  const scopeStr = String(scope).trim();
+  if (scopeStr.match(/^\d$/)) {
+    return `Scope ${scopeStr}`;
+  }
+  return scopeStr;
 }
