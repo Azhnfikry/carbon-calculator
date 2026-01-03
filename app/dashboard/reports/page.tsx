@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { EmissionReport } from '@/components/emission-report';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -10,7 +10,7 @@ import { AlertCircle } from 'lucide-react';
 export default function ReportsPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -53,16 +53,20 @@ export default function ReportsPage() {
   }
 
   if (!isAuthenticated) {
+    // Redirect after a short delay using useEffect
+    useEffect(() => {
+      const timer = setTimeout(() => router.push('/auth/login'), 2000);
+      return () => clearTimeout(timer);
+    }, [router]);
+
     return (
       <div className="container mx-auto py-8">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please log in to view your reports. Redirect to login page...
+            Please log in to view your reports. Redirecting to login page...
           </AlertDescription>
         </Alert>
-        {/* Redirect after a short delay */}
-        {setTimeout(() => router.push('/auth/login'), 2000)}
       </div>
     );
   }

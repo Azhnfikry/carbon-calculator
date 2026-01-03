@@ -128,7 +128,7 @@ function parseEmissionFactorsCSV(csvText: string): EmissionFactor[] {
 
     const row = Object.fromEntries(
       headers.map((header, idx) => [header, values[idx]])
-    ) as RawEmissionFactorCSV
+    ) as unknown as RawEmissionFactorCSV
 
     try {
       factors.push({

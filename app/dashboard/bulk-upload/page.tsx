@@ -64,7 +64,7 @@ export default function BulkUploadPage() {
 				{/* Bulk Upload Component */}
 				<BulkUpload
 					user={user}
-					onEntriesAdded={() => {
+					onUploadSuccess={() => {
 						// Optionally redirect back to dashboard
 						setTimeout(() => router.push("/dashboard"), 2000);
 					}}
