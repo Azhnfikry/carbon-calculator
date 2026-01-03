@@ -6,6 +6,7 @@ const nextConfig = {
     ];
     return config;
   },
+  turbopack: {},
   serverExternalPackages: ['@supabase/supabase-js'],
 };
 
