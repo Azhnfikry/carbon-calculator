@@ -47,8 +47,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For other file types (PDF, Excel, DOCX), try Gemini if API key is available
-    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY && generateText && google) {
+    // For other file types (PDF, DOCX), try Gemini if API key is available
+    // Note: Excel/XLSX not supported by Gemini, skip to fallback
+    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY && generateText && google && 
+        (fileExtension === 'pdf' || fileExtension === 'docx')) {
       console.log('🤖 Using Gemini API for', fileExtension, 'extraction...');
       try {
         const bytes = await file.arrayBuffer();
