@@ -10,6 +10,8 @@ import { ChartsPage } from "@/components/charts-page"
 import { EmissionTable } from "@/components/emission-table"
 import { EmissionReport } from "@/components/emission-report"
 import { CompanyInfoForm } from "@/components/company-info-form"
+import { BulkUpload } from "@/components/bulk-upload"
+import { EmissionsOutlook } from "@/components/emissions-outlook"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { createClient } from "@/lib/supabase/client"
 import { calculateEmissionSummary } from "@/lib/emission-calculations"
@@ -151,7 +153,11 @@ export function CarbonDashboard({ user, profile }: CarbonDashboardProps) {
           </div>
         )
       case "add-entry":
-        return <EmissionForm onEntryAdded={refreshData} user={user} />
+        return <EmissionForm onEntryAdded={refreshData} user={user} onBulkUploadClick={() => setActiveTab('bulk-upload')} />
+      case "bulk-upload":
+        return <BulkUpload user={user} onUploadSuccess={refreshData} />
+      case "emissions-outlook":
+        return <EmissionsOutlook user={user} />
       case "charts":
         return <ChartsPage entries={entries} summary={summary} />
       case "all-entries":

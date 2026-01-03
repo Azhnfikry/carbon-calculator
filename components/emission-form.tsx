@@ -15,12 +15,11 @@ import { createClient } from "@/lib/supabase/client";
 import { calculateCO2Equivalent } from "@/lib/emission-calculations";
 import type { EmissionFactor } from "@/types/emission";
 import type { User } from "@supabase/supabase-js";
-import { SelectItemText } from "@radix-ui/react-select";
-import { FileUploadForm } from "./file-upload-form";
 
 interface EmissionFormProps {
 	onEntryAdded: () => void;
 	user: User | null; // Made user optional
+	onBulkUploadClick?: () => void;
 }
 
 interface ExtractedEmissionData {
@@ -30,7 +29,7 @@ interface ExtractedEmissionData {
   Unit: string;
 }
 
-export function EmissionForm({ onEntryAdded, user }: EmissionFormProps) {
+export function EmissionForm({ onEntryAdded, user, onBulkUploadClick }: EmissionFormProps) {
 	const [activityType, setActivityType] = useState("");
 	const [category, setCategory] = useState("");
 	const [scope, setScope] = useState<1 | 2 | 3 | "">("");
@@ -43,7 +42,6 @@ export function EmissionForm({ onEntryAdded, user }: EmissionFormProps) {
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [emissionFactors, setEmissionFactors] = useState<EmissionFactor[]>([]);
-	const [showFileUpload, setShowFileUpload] = useState(false);
 
 	const supabase = createClient();
 
@@ -151,87 +149,6 @@ export function EmissionForm({ onEntryAdded, user }: EmissionFormProps) {
 		? [...new Set(emissionFactors.filter(f => f.scope === scope).map(f => f.activity_type))]
 		: [];
 
-	const handleDataExtracted = (data: ExtractedEmissionData[]) => {
-		if (data.length > 0) {
-			const firstItem = data[0];
-			console.log('Extracted data:', firstItem);
-			console.log('Available emission factors:', emissionFactors);
-			
-			// Set scope first
-			let newScope: 1 | 2 | 3 | "" = "";
-			if (firstItem.Scope && firstItem.Scope.includes('1')) {
-				newScope = 1;
-			} else if (firstItem.Scope && firstItem.Scope.includes('2')) {
-				newScope = 2;
-			} else if (firstItem.Scope && firstItem.Scope.includes('3')) {
-				newScope = 3;
-			}
-			
-			// Set activity type - use exact match first
-			let matchedActivity: EmissionFactor | null = null;
-			if (firstItem["Activity Type"]) {
-				const exactMatch = emissionFactors.find(
-					f => f.activity_type.toLowerCase() === firstItem["Activity Type"].toLowerCase()
-				);
-				
-				if (exactMatch) {
-					console.log('Found exact match:', exactMatch);
-					matchedActivity = exactMatch;
-				} else {
-					// Try case-insensitive contains match
-					const containsMatch = emissionFactors.find(
-						f => f.activity_type.toLowerCase().includes(firstItem["Activity Type"].toLowerCase()) ||
-							firstItem["Activity Type"].toLowerCase().includes(f.activity_type.toLowerCase())
-					);
-					
-					if (containsMatch) {
-						console.log('Found contains match:', containsMatch);
-						matchedActivity = containsMatch;
-					} else {
-						// Try to find by unit
-						const matchingByUnit = emissionFactors.find(
-							f => f.unit.toLowerCase() === firstItem.Unit?.toLowerCase()
-						);
-						if (matchingByUnit) {
-							console.log('Found match by unit:', matchingByUnit);
-							matchedActivity = matchingByUnit;
-						} else {
-							console.log('No match found for activity type:', firstItem["Activity Type"]);
-						}
-					}
-				}
-			}
-
-			// Now set all state values at once to avoid scope resetting activity type
-			if (newScope) {
-				setScope(newScope);
-			}
-			
-			if (matchedActivity) {
-				setActivityType(matchedActivity.activity_type);
-				setCategory(matchedActivity.category);
-				setUnit(matchedActivity.unit);
-				setEmissionFactor(matchedActivity.factor.toString());
-			}
-
-			// Set quantity
-			if (firstItem.Quantity) {
-				setQuantity(firstItem.Quantity);
-			}
-
-			// Set description with extracted info
-			const extractedInfo = `Extracted using AI. Please always cross check before submitting.`;
-			setDescription(extractedInfo);
-
-			// Hide file upload after successful extraction
-			setShowFileUpload(false);
-		}
-	};
-
-	const toggleFileUpload = () => {
-		setShowFileUpload(!showFileUpload);
-	};
-
 	return (
 		<div className="space-y-6">
 			<Card>
@@ -246,19 +163,13 @@ export function EmissionForm({ onEntryAdded, user }: EmissionFormProps) {
 						<Button 
 							type="button" 
 							variant="outline" 
-							onClick={toggleFileUpload}
-							className="flex items-center gap-2"
+							className="flex items-center gap-2 w-full"
+							onClick={onBulkUploadClick}
 						>
 							<Upload className="h-4 w-4" />
-							{showFileUpload ? "Hide File Upload" : "Upload Document for Auto-Fill"}
+							Bulk Upload Multiple Entries
 						</Button>
 					</div>
-
-					{showFileUpload && (
-						<div className="mb-6">
-							<FileUploadForm onDataExtracted={handleDataExtracted} />
-						</div>
-					)}
 
 					{!user && (
 						<Alert className="mb-4">
