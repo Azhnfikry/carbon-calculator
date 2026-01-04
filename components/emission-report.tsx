@@ -157,9 +157,8 @@ export function EmissionReport() {
       setDownloading(true);
       setError(null);
 
-      // Use browser print-to-PDF
       const printContent = reportRef.current.innerHTML;
-      const printWindow = window.open('', '', 'width=900,height=1200');
+      const printWindow = window.open('', '', 'width=1000,height=1400');
       
       if (!printWindow) {
         throw new Error('Could not open print window. Check your browser settings.');
@@ -169,44 +168,113 @@ export function EmissionReport() {
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Carbon Emissions Report</title>
+          <title>GHG Emissions Inventory Report</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: white; }
-            .report-container { max-width: 900px; margin: 0 auto; }
-            .header { border-bottom: 3px solid #16a34a; padding-bottom: 20px; margin-bottom: 30px; }
-            .title { font-size: 28px; font-weight: bold; color: #1f2937; margin-bottom: 5px; }
-            .subtitle { color: #6b7280; font-size: 14px; }
-            .company-section { background: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
-            .company-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 15px; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
-            .info-row { display: grid; grid-template-columns: 200px 1fr; gap: 20px; margin-bottom: 12px; }
-            .info-label { font-weight: 600; color: #374151; }
-            .info-value { color: #6b7280; }
-            .emissions-section { margin-bottom: 30px; }
-            .emissions-title { font-size: 18px; font-weight: bold; color: #1f2937; margin-bottom: 20px; border-bottom: 2px solid #16a34a; padding-bottom: 10px; }
-            .emissions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-            .emission-card { background: white; border: 2px solid #e5e7eb; border-radius: 8px; padding: 20px; text-align: center; }
-            .emission-label { color: #6b7280; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
-            .emission-value { font-size: 28px; font-weight: bold; color: #16a34a; }
-            .emission-unit { color: #9ca3af; font-size: 12px; margin-top: 4px; }
-            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; text-align: center; }
-            @media print { body { padding: 0; } }
+            body { 
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+              padding: 40px; 
+              background: white; 
+              color: #1f2937;
+              line-height: 1.6;
+            }
+            .space-y-6 > * + * { margin-top: 1.5rem; }
+            .space-y-8 > * + * { margin-top: 2rem; }
+            .space-y-4 > * + * { margin-top: 1rem; }
+            
+            h1 { font-size: 36px; font-weight: bold; margin-bottom: 10px; }
+            h2 { font-size: 24px; font-weight: bold; border-bottom: 4px solid #16a34a; padding-bottom: 12px; margin-bottom: 24px; }
+            h3 { font-size: 16px; font-weight: 600; }
+            
+            p { font-size: 14px; }
+            .text-xs { font-size: 12px; }
+            .text-sm { font-size: 13px; }
+            .text-lg { font-size: 16px; }
+            .text-2xl { font-size: 20px; }
+            .text-5xl { font-size: 48px; }
+            
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .uppercase { text-transform: uppercase; }
+            
+            .text-gray-600 { color: #4b5563; }
+            .text-gray-400 { color: #9ca3af; }
+            .text-gray-500 { color: #6b7280; }
+            .text-gray-900 { color: #1f2937; }
+            .text-green-700 { color: #15803d; }
+            .text-green-400 { color: #4ade80; }
+            
+            .border-b-4 { border-bottom: 4px solid #16a34a; }
+            .border-b-3 { border-bottom: 3px solid #16a34a; }
+            .border-b { border-bottom: 1px solid #e5e7eb; }
+            .border-t { border-top: 1px solid #e5e7eb; }
+            .border-t-2 { border-top: 2px solid #d1d5db; }
+            .border-r { border-right: 1px solid #e5e7eb; }
+            .border-2 { border: 2px solid #e5e7eb; }
+            .border-red-3 { border: 2px solid #fca5a5; }
+            .border-amber-3 { border: 2px solid #fcd34d; }
+            .border-blue-3 { border: 2px solid #93c5fd; }
+            
+            .pb-3 { padding-bottom: 12px; }
+            .pb-6 { padding-bottom: 24px; }
+            .pt-2 { padding-top: 8px; }
+            .pt-4 { padding-top: 16px; }
+            .pt-6 { padding-top: 24px; }
+            .p-3 { padding: 12px; }
+            .p-4 { padding: 16px; }
+            .p-5 { padding: 20px; }
+            .p-6 { padding: 24px; }
+            .p-8 { padding: 32px; }
+            
+            .mb-2 { margin-bottom: 8px; }
+            .mb-3 { margin-bottom: 12px; }
+            .mb-4 { margin-bottom: 16px; }
+            .mb-6 { margin-bottom: 24px; }
+            .mt-2 { margin-top: 8px; }
+            .mt-4 { margin-top: 16px; }
+            
+            .bg-red-50 { background: #fef2f2; }
+            .bg-amber-50 { background: #fffbeb; }
+            .bg-blue-50 { background: #eff6ff; }
+            .bg-green-50 { background: #f0fdf4; }
+            .bg-gray-50 { background: #f9fafb; }
+            
+            .rounded { border-radius: 4px; }
+            .rounded-lg { border-radius: 8px; }
+            
+            .grid { display: grid; }
+            .grid-cols-2 { grid-template-columns: 1fr 1fr; gap: 24px; }
+            .grid-cols-3 { grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+            .grid-cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+            .gap-3 { gap: 12px; }
+            .gap-4 { gap: 16px; }
+            .gap-6 { gap: 24px; }
+            
+            .flex { display: flex; }
+            .flex-col { flex-direction: column; }
+            .items-start { align-items: flex-start; }
+            
+            .text-center { text-align: center; }
+            
+            .bg-gradient-to-r { background: linear-gradient(to right, #f0fdf4, #dbeafe); }
+            
+            @media print {
+              body { padding: 20px; }
+              .page-break { page-break-after: always; }
+            }
           </style>
         </head>
         <body>
           ${printContent}
+          <script>
+            setTimeout(() => {
+              window.print();
+            }, 100);
+          </script>
         </body>
         </html>
       `);
       printWindow.document.close();
-      printWindow.focus();
-
-      // Trigger print dialog after content is loaded
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-        setDownloading(false);
-      }, 250);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error downloading PDF');
       setDownloading(false);
