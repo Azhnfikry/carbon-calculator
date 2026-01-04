@@ -74,11 +74,14 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 				body: formData,
 			});
 
+			const data = await response.json();
+
 			if (!response.ok) {
-				throw new Error("Failed to extract emissions from file");
+				const errorMsg = data.error || "Failed to extract emissions from file";
+				const hint = data.hint ? ` ${data.hint}` : "";
+				throw new Error(errorMsg + hint);
 			}
 
-			const data = await response.json();
 			const extracted: ExtractedEmissionData[] = data.emissions || [];
 
 			if (extracted.length === 0) {
