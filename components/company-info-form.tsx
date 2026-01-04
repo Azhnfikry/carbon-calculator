@@ -381,15 +381,16 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
           </CardContent>
         </Card>
 
-        {/* Part 2: Consolidation & Scope */}
+        {/* Part 2: Organizational Boundary */}
         <Card>
           <CardHeader>
-            <CardTitle>Consolidation & Organizational Boundary</CardTitle>
-            <CardDescription>Define your reporting approach and scope</CardDescription>
+            <CardTitle>Organizational Boundary</CardTitle>
+            <CardDescription>Define which consolidation approaches and boundaries apply to your organization</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            {/* Consolidation Approach Selection */}
             <div className="space-y-2">
-              <Label htmlFor="consolidation_approach">Chosen Consolidation Approach *</Label>
+              <Label htmlFor="consolidation_approach">Primary Consolidation Approach *</Label>
               <Select value={formData.consolidation_approach} onValueChange={(value) => handleSelectChange('consolidation_approach', value)}>
                 <SelectTrigger id="consolidation_approach">
                   <SelectValue />
@@ -400,8 +401,80 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
                   <SelectItem value="financial-control">Financial Control</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Choose the primary method for determining organizational boundaries
+              </p>
             </div>
 
+            {/* Organizational Boundary Checkboxes */}
+            <div className="space-y-3 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <Label className="font-semibold">Organizational Boundaries Used</Label>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Select all boundaries that apply to your organization:</p>
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="equity_share"
+                    checked={formData.consolidation_approach?.includes('equity') || false}
+                    onChange={(e) => {
+                      const current = formData.consolidation_approach || '';
+                      const updated = e.target.checked 
+                        ? (current + ' equity').trim()
+                        : current.replace('equity', '').trim();
+                      handleSelectChange('consolidation_approach', updated);
+                    }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="equity_share" className="text-sm font-medium cursor-pointer">
+                    Equity Share Approach
+                  </label>
+                  <span className="text-xs text-gray-500">- Based on ownership percentage</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="financial_control"
+                    checked={formData.consolidation_approach?.includes('financial') || false}
+                    onChange={(e) => {
+                      const current = formData.consolidation_approach || '';
+                      const updated = e.target.checked 
+                        ? (current + ' financial').trim()
+                        : current.replace('financial', '').trim();
+                      handleSelectChange('consolidation_approach', updated);
+                    }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="financial_control" className="text-sm font-medium cursor-pointer">
+                    Financial Control Approach
+                  </label>
+                  <span className="text-xs text-gray-500">- Based on financial control rights</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="operational_control"
+                    checked={formData.consolidation_approach?.includes('operational') || false}
+                    onChange={(e) => {
+                      const current = formData.consolidation_approach || '';
+                      const updated = e.target.checked 
+                        ? (current + ' operational').trim()
+                        : current.replace('operational', '').trim();
+                      handleSelectChange('consolidation_approach', updated);
+                    }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <label htmlFor="operational_control" className="text-sm font-medium cursor-pointer">
+                    Operational Control Approach
+                  </label>
+                  <span className="text-xs text-gray-500">- Based on operational control</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Business Description */}
             <div className="space-y-2">
               <Label htmlFor="business_description">Description of Businesses & Operations in Organizational Boundary *</Label>
               <Textarea

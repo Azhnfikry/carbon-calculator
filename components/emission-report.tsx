@@ -402,26 +402,26 @@ export function EmissionReport() {
             </div>
           )}
 
-          {/* ORGANIZATIONAL BOUNDARIES SUB-SECTION */}
+          {/* ORGANIZATIONAL BOUNDARY SUB-SECTION */}
           <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg border border-gray-200 dark:border-slate-700 mb-6">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase mb-4 border-b border-gray-300 pb-2">Consolidation Approach</h3>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase mb-4 border-b border-gray-300 pb-2">Organizational Boundary Approach</h3>
             
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Equity Share</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
                   {reportData.company_info?.consolidation_approach?.includes('equity') ? '✓' : '—'}
                 </p>
               </div>
               <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Financial Control</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
                   {reportData.company_info?.consolidation_approach?.includes('financial') ? '✓' : '—'}
                 </p>
               </div>
               <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Operational Control</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
                   {reportData.company_info?.consolidation_approach?.includes('operational') ? '✓' : '—'}
                 </p>
               </div>
@@ -429,7 +429,7 @@ export function EmissionReport() {
 
             {reportData.company_info?.consolidation_approach && (
               <div className="p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold mb-2">Consolidation Rationale</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold mb-2">Applied Boundary Approach</p>
                 <p className="text-sm text-gray-700 dark:text-gray-300">{reportData.company_info.consolidation_approach}</p>
               </div>
             )}
@@ -437,7 +437,7 @@ export function EmissionReport() {
 
           {/* OPERATIONAL BOUNDARIES SUB-SECTION */}
           <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700 mb-6">
-            <h3 className="text-sm font-bold text-blue-900 dark:text-blue-200 uppercase mb-4 border-b border-blue-300 pb-2">Operational Boundaries</h3>
+            <h3 className="text-sm font-bold text-blue-900 dark:text-blue-200 uppercase mb-4 border-b border-blue-300 pb-2">Scope & Emission Coverage</h3>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 bg-white dark:bg-slate-800 rounded border border-blue-200 dark:border-blue-600">
