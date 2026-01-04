@@ -66,6 +66,7 @@ export function EmissionReport() {
       setError(null);
       setLoading(true);
 
+      console.log('Fetching report data...');
       const response = await fetch('/api/generate-report', {
         method: 'GET',
         headers: {
@@ -74,15 +75,18 @@ export function EmissionReport() {
         credentials: 'include', // Include cookies for authentication
       });
 
+      console.log('Response status:', response.status, response.statusText);
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
         // Check if error message is in the response
         const errorMsg = data.error || `Failed to fetch report data: ${response.statusText}`;
+        console.error('API error:', errorMsg);
         throw new Error(errorMsg);
       }
 
-      // Validate and normalize the data to handle both old and new formats
+      console.log('Data received, normalizing...');
       const normalizedData: ReportData = {
         generated_at: data.generated_at || new Date().toISOString(),
         company_name: data.company_name || data.company_info?.name || 'Not Provided',
@@ -134,7 +138,9 @@ export function EmissionReport() {
       setReportData(normalizedData);
     } catch (err) {
       console.error('Report fetch error:', err);
-      setError(err instanceof Error ? err.message : 'Error loading report');
+      const errorMessage = err instanceof Error ? err.message : 'Error loading report';
+      console.error('Setting error message:', errorMessage);
+      setError(errorMessage);
       setReportData(null);
     } finally {
       setLoading(false);
