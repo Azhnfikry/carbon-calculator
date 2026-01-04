@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/deepseek": "^1.0.23",
     "@ai-sdk/google": "^2.0.23",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
