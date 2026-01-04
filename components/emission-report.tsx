@@ -396,11 +396,44 @@ export function EmissionReport() {
           )}
 
           {reportData.business_description && (
-            <div>
+            <div className="mb-6">
               <p className="text-xs font-semibold text-gray-500 uppercase">Business Activities</p>
               <p className="text-gray-700 dark:text-gray-300 mt-2">{reportData.business_description}</p>
             </div>
           )}
+
+          {/* ORGANIZATIONAL BOUNDARIES SUB-SECTION */}
+          <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase mb-4 border-b border-gray-300 pb-2">Organizational Boundaries</h3>
+            
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Equity Share</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                  {reportData.company_info?.consolidation_approach?.includes('equity') ? 'Yes' : 'No'}
+                </p>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Financial Control</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                  {reportData.company_info?.consolidation_approach?.includes('financial') ? 'Yes' : 'No'}
+                </p>
+              </div>
+              <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Operational Control</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white mt-2">
+                  {reportData.company_info?.consolidation_approach?.includes('operational') ? 'Yes' : 'No'}
+                </p>
+              </div>
+            </div>
+
+            {reportData.company_info?.consolidation_approach && (
+              <div className="p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold mb-2">Consolidation Approach</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">{reportData.company_info.consolidation_approach}</p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* SECTION 2: Emissions Summary - Main */}
