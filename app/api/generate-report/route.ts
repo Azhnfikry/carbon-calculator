@@ -146,19 +146,10 @@ export async function GET(request: NextRequest) {
 
     // Calculate emissions for each entry if not already calculated
     const processedEmissions = emissions.map((emission: any) => {
-      // Try to get total_emissions from different possible field names
-      let total_emissions = emission.total_emissions || 
-                           emission.co2_equivalent || 
-                           emission.co2Equivalent || 0;
-      
-      // If total_emissions is 0 or not set, try to calculate it
-      if (!total_emissions && emission.quantity && emission.activity_type) {
-        const factor = EMISSION_FACTORS[emission.activity_type] || 
-                      EMISSION_FACTORS[emission.category] || 
-                      emission.emission_factor ||
-                      1;
-        total_emissions = parseFloat(emission.quantity) * parseFloat(String(factor));
-      }
+      // Use co2_equivalent from database, which is the actual emissions column
+      const total_emissions = emission.co2_equivalent || 
+                             emission.total_emissions || 
+                             emission.co2Equivalent || 0;
 
       return {
         ...emission,
@@ -166,6 +157,11 @@ export async function GET(request: NextRequest) {
         activity_description: emission.description || emission.activity_type || '-',
       };
     });
+    
+    console.log('Processed emissions count:', processedEmissions.length);
+    if (processedEmissions.length > 0) {
+      console.log('Sample processed emission with total_emissions:', processedEmissions[0]);
+    }
 
     // Get company info - handle case where it doesn't exist yet
     let companyInfo = null;
