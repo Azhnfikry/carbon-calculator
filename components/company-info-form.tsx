@@ -388,28 +388,10 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
             <CardDescription>Define which consolidation approaches and boundaries apply to your organization</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Consolidation Approach Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="consolidation_approach">Primary Consolidation Approach *</Label>
-              <Select value={formData.consolidation_approach} onValueChange={(value) => handleSelectChange('consolidation_approach', value)}>
-                <SelectTrigger id="consolidation_approach">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="equity-share">Equity Share</SelectItem>
-                  <SelectItem value="operational-control">Operational Control</SelectItem>
-                  <SelectItem value="financial-control">Financial Control</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-gray-500 mt-1">
-                Choose the primary method for determining organizational boundaries
-              </p>
-            </div>
-
             {/* Organizational Boundary Checkboxes */}
             <div className="space-y-3 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-              <Label className="font-semibold">Organizational Boundaries Used</Label>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Select all boundaries that apply to your organization:</p>
+              <Label className="font-semibold">Organizational Boundaries Used *</Label>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">Select all boundaries that apply to your organization:</p>
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
