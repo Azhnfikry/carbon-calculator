@@ -410,27 +410,63 @@ export function EmissionReport() {
               <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Equity Share</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {reportData.company_info?.consolidation_approach?.includes('equity') ? '✓' : '—'}
+                  {(() => {
+                    try {
+                      const boundaries = JSON.parse(reportData.company_info?.consolidation_approach || '[]');
+                      return Array.isArray(boundaries) && boundaries.includes('equity') ? '✓' : '—';
+                    } catch {
+                      return '—';
+                    }
+                  })()}
                 </p>
               </div>
               <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Financial Control</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {reportData.company_info?.consolidation_approach?.includes('financial') ? '✓' : '—'}
+                  {(() => {
+                    try {
+                      const boundaries = JSON.parse(reportData.company_info?.consolidation_approach || '[]');
+                      return Array.isArray(boundaries) && boundaries.includes('financial') ? '✓' : '—';
+                    } catch {
+                      return '—';
+                    }
+                  })()}
                 </p>
               </div>
               <div className="text-center p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold">Operational Control</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
-                  {reportData.company_info?.consolidation_approach?.includes('operational') ? '✓' : '—'}
+                  {(() => {
+                    try {
+                      const boundaries = JSON.parse(reportData.company_info?.consolidation_approach || '[]');
+                      return Array.isArray(boundaries) && boundaries.includes('operational') ? '✓' : '—';
+                    } catch {
+                      return '—';
+                    }
+                  })()}
                 </p>
               </div>
             </div>
 
             {reportData.company_info?.consolidation_approach && (
               <div className="p-3 bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-600">
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold mb-2">Applied Boundary Approach</p>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{reportData.company_info.consolidation_approach}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase font-semibold mb-2">Applied Boundary Approaches</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  {(() => {
+                    try {
+                      const boundaries = JSON.parse(reportData.company_info.consolidation_approach || '[]');
+                      if (!Array.isArray(boundaries) || boundaries.length === 0) return 'Not specified';
+                      const labels: Record<string, string> = {
+                        equity: 'Equity Share',
+                        financial: 'Financial Control',
+                        operational: 'Operational Control'
+                      };
+                      return boundaries.map(b => labels[b] || b).join(', ');
+                    } catch {
+                      return reportData.company_info.consolidation_approach;
+                    }
+                  })()}
+                </p>
               </div>
             )}
           </div>

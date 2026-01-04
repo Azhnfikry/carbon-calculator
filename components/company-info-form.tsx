@@ -398,13 +398,30 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
                   <input
                     type="checkbox"
                     id="equity_share"
-                    checked={formData.consolidation_approach?.includes('equity') || false}
+                    checked={
+                      (() => {
+                        try {
+                          const parsed = JSON.parse(formData.consolidation_approach || '[]');
+                          return Array.isArray(parsed) && parsed.includes('equity');
+                        } catch {
+                          return false;
+                        }
+                      })()
+                    }
                     onChange={(e) => {
-                      const current = formData.consolidation_approach || '';
-                      const updated = e.target.checked 
-                        ? (current + ' equity').trim()
-                        : current.replace('equity', '').trim();
-                      handleSelectChange('consolidation_approach', updated);
+                      try {
+                        const current = JSON.parse(formData.consolidation_approach || '[]');
+                        const updated = Array.isArray(current) ? current : [];
+                        if (e.target.checked && !updated.includes('equity')) {
+                          updated.push('equity');
+                        } else if (!e.target.checked) {
+                          const idx = updated.indexOf('equity');
+                          if (idx > -1) updated.splice(idx, 1);
+                        }
+                        handleSelectChange('consolidation_approach', JSON.stringify(updated));
+                      } catch {
+                        handleSelectChange('consolidation_approach', e.target.checked ? '["equity"]' : '[]');
+                      }
                     }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
@@ -418,13 +435,30 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
                   <input
                     type="checkbox"
                     id="financial_control"
-                    checked={formData.consolidation_approach?.includes('financial') || false}
+                    checked={
+                      (() => {
+                        try {
+                          const parsed = JSON.parse(formData.consolidation_approach || '[]');
+                          return Array.isArray(parsed) && parsed.includes('financial');
+                        } catch {
+                          return false;
+                        }
+                      })()
+                    }
                     onChange={(e) => {
-                      const current = formData.consolidation_approach || '';
-                      const updated = e.target.checked 
-                        ? (current + ' financial').trim()
-                        : current.replace('financial', '').trim();
-                      handleSelectChange('consolidation_approach', updated);
+                      try {
+                        const current = JSON.parse(formData.consolidation_approach || '[]');
+                        const updated = Array.isArray(current) ? current : [];
+                        if (e.target.checked && !updated.includes('financial')) {
+                          updated.push('financial');
+                        } else if (!e.target.checked) {
+                          const idx = updated.indexOf('financial');
+                          if (idx > -1) updated.splice(idx, 1);
+                        }
+                        handleSelectChange('consolidation_approach', JSON.stringify(updated));
+                      } catch {
+                        handleSelectChange('consolidation_approach', e.target.checked ? '["financial"]' : '[]');
+                      }
                     }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
@@ -438,13 +472,30 @@ export function CompanyInfoForm({ user }: CompanyInfoFormProps) {
                   <input
                     type="checkbox"
                     id="operational_control"
-                    checked={formData.consolidation_approach?.includes('operational') || false}
+                    checked={
+                      (() => {
+                        try {
+                          const parsed = JSON.parse(formData.consolidation_approach || '[]');
+                          return Array.isArray(parsed) && parsed.includes('operational');
+                        } catch {
+                          return false;
+                        }
+                      })()
+                    }
                     onChange={(e) => {
-                      const current = formData.consolidation_approach || '';
-                      const updated = e.target.checked 
-                        ? (current + ' operational').trim()
-                        : current.replace('operational', '').trim();
-                      handleSelectChange('consolidation_approach', updated);
+                      try {
+                        const current = JSON.parse(formData.consolidation_approach || '[]');
+                        const updated = Array.isArray(current) ? current : [];
+                        if (e.target.checked && !updated.includes('operational')) {
+                          updated.push('operational');
+                        } else if (!e.target.checked) {
+                          const idx = updated.indexOf('operational');
+                          if (idx > -1) updated.splice(idx, 1);
+                        }
+                        handleSelectChange('consolidation_approach', JSON.stringify(updated));
+                      } catch {
+                        handleSelectChange('consolidation_approach', e.target.checked ? '["operational"]' : '[]');
+                      }
                     }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
