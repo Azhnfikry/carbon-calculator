@@ -1,11 +1,3 @@
 {
-  "buildCommand": "npm run build",
-  "functions": {
-    "app/api/**/*.ts": {
-      "runtime": "nodejs@20.x",
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  },
-  "regions": ["iad"]
+  "buildCommand": "npm run build"
 }
