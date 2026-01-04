@@ -6,24 +6,48 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Download } from 'lucide-react';
 
 type CompanyInfo = {
-  name: string;
-  description: string;
-  consolidation_approach: string;
-  business_description: string;
-  reporting_period: string;
-  base_year: number;
-  base_year_rationale: string;
+  name?: string;
+  description?: string;
+  consolidation_approach?: string;
+  business_description?: string;
+  reporting_period?: string;
+  base_year?: number;
+  base_year_rationale?: string;
+};
+
+type EmissionByGas = {
+  mtco2e: number;
+  co2_mt: number;
+  ch4_mt: number;
+  n2o_mt: number;
+  hfcs_mt: number;
+  pfcs_mt: number;
+  sf6_mt: number;
 };
 
 type ReportData = {
   generated_at: string;
-  company_info: CompanyInfo;
-  user_name: string;
-  user_email: string;
-  scope_1_total: number;
-  scope_2_total: number;
-  scope_3_total: number;
-  total_emissions: number;
+  company_name?: string;
+  inventory_year?: number;
+  company_description?: string;
+  business_description?: string;
+  user_name?: string;
+  user_email?: string;
+  
+  // Simplified totals (for backward compatibility)
+  scope_1_total?: number;
+  scope_2_total?: number;
+  scope_3_total?: number;
+  total_emissions?: number;
+  
+  // New GHG Protocol fields
+  company_info?: CompanyInfo;
+  emissions?: {
+    scope1?: EmissionByGas;
+    scope2?: EmissionByGas;
+    scope3?: EmissionByGas;
+    total?: number;
+  };
 };
 
 export function EmissionReport() {
@@ -58,24 +82,53 @@ export function EmissionReport() {
         throw new Error(errorMsg);
       }
 
-      // Validate and normalize the data
+      // Validate and normalize the data to handle both old and new formats
       const normalizedData: ReportData = {
         generated_at: data.generated_at || new Date().toISOString(),
-        company_info: {
-          name: data.company_info?.name || 'Not Provided',
-          description: data.company_info?.description || '',
-          consolidation_approach: data.company_info?.consolidation_approach || '',
-          business_description: data.company_info?.business_description || '',
-          reporting_period: data.company_info?.reporting_period || '',
-          base_year: data.company_info?.base_year || new Date().getFullYear(),
-          base_year_rationale: data.company_info?.base_year_rationale || '',
+        company_name: data.company_name || data.company_info?.name || 'Not Provided',
+        inventory_year: data.inventory_year || data.company_info?.base_year || new Date().getFullYear(),
+        company_description: data.company_description || data.company_info?.description || '',
+        business_description: data.business_description || data.company_info?.business_description || '',
+        user_name: data.generated_by || data.user_name || 'Unknown User',
+        user_email: data.report_contact_email || data.user_email || 'N/A',
+        
+        // Support both old and new formats
+        scope_1_total: data.emissions?.scope1?.mtco2e || Number(data.scope_1_total) || 0,
+        scope_2_total: data.emissions?.scope2?.mtco2e || Number(data.scope_2_total) || 0,
+        scope_3_total: data.emissions?.scope3?.mtco2e || Number(data.scope_3_total) || 0,
+        total_emissions: data.emissions?.total || Number(data.total_emissions) || 0,
+        
+        // Keep new GHG Protocol data
+        emissions: data.emissions || {
+          scope1: {
+            mtco2e: data.scope_1_total || 0,
+            co2_mt: data.scope_1_total || 0,
+            ch4_mt: 0,
+            n2o_mt: 0,
+            hfcs_mt: 0,
+            pfcs_mt: 0,
+            sf6_mt: 0,
+          },
+          scope2: {
+            mtco2e: data.scope_2_total || 0,
+            co2_mt: data.scope_2_total || 0,
+            ch4_mt: 0,
+            n2o_mt: 0,
+            hfcs_mt: 0,
+            pfcs_mt: 0,
+            sf6_mt: 0,
+          },
+          scope3: {
+            mtco2e: data.scope_3_total || 0,
+            co2_mt: data.scope_3_total || 0,
+            ch4_mt: 0,
+            n2o_mt: 0,
+            hfcs_mt: 0,
+            pfcs_mt: 0,
+            sf6_mt: 0,
+          },
+          total: data.total_emissions || 0,
         },
-        user_name: data.user_name || 'Unknown User',
-        user_email: data.user_email || 'N/A',
-        scope_1_total: Number(data.scope_1_total) || 0,
-        scope_2_total: Number(data.scope_2_total) || 0,
-        scope_3_total: Number(data.scope_3_total) || 0,
-        total_emissions: Number(data.total_emissions) || 0,
       };
 
       setReportData(normalizedData);
@@ -220,45 +273,25 @@ export function EmissionReport() {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Company Name</p>
-              <p className="text-lg text-gray-900 dark:text-white">{reportData.company_info.name}</p>
+              <p className="text-lg text-gray-900 dark:text-white">{reportData.company_name || 'Not provided'}</p>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Reporting Period</p>
-              <p className="text-lg text-gray-900 dark:text-white">{reportData.company_info.reporting_period || 'Not specified'}</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Inventory Year</p>
+              <p className="text-lg text-gray-900 dark:text-white">{reportData.inventory_year || new Date().getFullYear()}</p>
             </div>
           </div>
 
-          {reportData.company_info.description && (
+          {reportData.company_description && (
             <div>
               <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Description</p>
-              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.description}</p>
+              <p className="text-gray-700 dark:text-gray-300">{reportData.company_description}</p>
             </div>
           )}
 
-          {reportData.company_info.business_description && (
+          {reportData.business_description && (
             <div>
               <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Business Description</p>
-              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.business_description}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Consolidation Approach</p>
-              <p className="text-gray-700 dark:text-gray-300 capitalize">
-                {reportData.company_info.consolidation_approach?.replace('-', ' ') || 'Not specified'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Base Year</p>
-              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.base_year}</p>
-            </div>
-          </div>
-
-          {reportData.company_info.base_year_rationale && (
-            <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Base Year Rationale</p>
-              <p className="text-gray-700 dark:text-gray-300">{reportData.company_info.base_year_rationale}</p>
+              <p className="text-gray-700 dark:text-gray-300">{reportData.business_description}</p>
             </div>
           )}
         </div>
