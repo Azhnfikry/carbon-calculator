@@ -139,11 +139,21 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 				const factor = matchedFactor?.factor || 1;
 				const co2_equivalent = quantity * factor;
 
+				// Parse scope: handles both "2" and "Scope 2" formats
+				let scopeNumber = 2; // default
+				const scopeStr = item.Scope?.toString().toLowerCase().trim() || "";
+				if (scopeStr.includes("scope")) {
+					const match = scopeStr.match(/\d+/);
+					if (match) scopeNumber = parseInt(match[0]);
+				} else {
+					scopeNumber = parseInt(item.Scope) || 2;
+				}
+
 				return {
 					user_id: user.id,
 					activity_type: item["Activity Type"],
 					category: matchedFactor?.category || "Unknown",
-					scope: parseInt(item.Scope),
+					scope: scopeNumber,
 					quantity,
 					unit: matchedFactor?.unit || item.Unit,
 					emission_factor: factor,
@@ -176,6 +186,7 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 			if (fileInputRef.current) fileInputRef.current.value = "";
 			onUploadSuccess?.();
 		} catch (error) {
+			console.error("Database insertion error:", error);
 			setError(error instanceof Error ? error.message : "Failed to insert entries");
 		} finally {
 			setIsProcessing(false);
