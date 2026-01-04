@@ -130,6 +130,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(emptyReport);
     }
 
+    console.log(`Found ${emissions.length} emissions for user`);
+    console.log('Sample emission:', emissions[0]);
+
     // Get user profile for report header
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -164,36 +167,56 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Get company info
-    const { data: companyInfo, error: companyError } = await supabase
+    // Get company info - handle case where it doesn't exist yet
+    let companyInfo = null;
+    const { data: companyData, error: companyError } = await supabase
       .from('company_info')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle(); // Use maybeSingle to allow null result instead of error
 
     if (companyError) {
       console.warn('Company info fetch warning:', companyError.message);
+    } else if (companyData) {
+      companyInfo = companyData;
     }
+
+    console.log('Company info retrieved:', companyInfo ? 'Yes' : 'No');
 
     // Calculate emissions by scope with gas breakdowns
     const calculateScopeEmissions = (scopeNum: number) => {
+      const scopeEmissions = processedEmissions.filter((e: any) => normalizeScopeNumber(e.scope) === scopeNum);
+      
+      console.log(`Scope ${scopeNum}: ${scopeEmissions.length} entries`);
+      
+      const totalKgCO2e = scopeEmissions.reduce((sum, e) => sum + asNumber(e.total_emissions), 0);
+      const mtCO2e = round2(toMtCO2e(totalKgCO2e));
+      
+      // Calculate gas breakdowns from emissions data if available, otherwise estimate as CO2
+      const co2Mt = round2(toMtCO2e(scopeEmissions.reduce((sum, e) => sum + asNumber(e.co2_emissions || e.total_emissions), 0)));
+      const ch4Mt = round2(toMtCO2e(scopeEmissions.reduce((sum, e) => sum + asNumber(e.ch4_emissions || 0), 0)));
+      const n2oMt = round2(toMtCO2e(scopeEmissions.reduce((sum, e) => sum + asNumber(e.n2o_emissions || 0), 0)));
+      const hfcsMt = round2(toMtCO2e(scopeEmissions.reduce((sum, e) => sum + asNumber(e.hfcs_emissions || 0), 0)));
+      const pfcsMt = round2(toMtCO2e(scopeEmissions.reduce((sum, e) => sum + asNumber(e.pfcs_emissions || 0), 0)));
+      const sf6Mt = round2(toMtCO2e(scopeEmissions.reduce((sum, e) => sum + asNumber(e.sf6_emissions || 0), 0)));
+      
+      console.log(`Scope ${scopeNum} totals - mtCO2e: ${mtCO2e}, CO2: ${co2Mt}, CH4: ${ch4Mt}`);
+      
       return {
-        mtco2e: round2(toMtCO2e(processedEmissions
-          .filter((e: any) => normalizeScopeNumber(e.scope) === scopeNum)
-          .reduce((sum, e) => sum + asNumber(e.total_emissions), 0))),
-        co2: 0,
-        ch4: 0,
-        n2o: 0,
-        hfcs: 0,
-        pfcs: 0,
-        sf6: 0,
+        mtco2e: mtCO2e,
+        co2: co2Mt > 0 ? co2Mt : mtCO2e, // If no individual CO2 data, use total as CO2
+        ch4: ch4Mt,
+        n2o: n2oMt,
+        hfcs: hfcsMt,
+        pfcs: pfcsMt,
+        sf6: sf6Mt,
       };
     };
 
     const scope1 = calculateScopeEmissions(1);
     const scope2 = calculateScopeEmissions(2);
     const scope3 = calculateScopeEmissions(3);
-    const totalEmissions = scope1.mtco2e + scope2.mtco2e + scope3.mtco2e;
+    const totalEmissions = round2(scope1.mtco2e + scope2.mtco2e + scope3.mtco2e);
 
     // Format reporting period
     const reportingPeriodFrom = companyInfo?.reporting_period_from || new Date().toISOString().split('T')[0];
