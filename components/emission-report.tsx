@@ -226,10 +226,21 @@ export function EmissionReport() {
 
   if (error && !reportData) {
     return (
-      <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
-        <AlertCircle className="h-4 w-4 text-red-600" />
-        <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
-      </Alert>
+      <div className="space-y-4">
+        <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
+        </Alert>
+        <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg text-sm text-gray-600 dark:text-gray-400">
+          <p className="font-semibold mb-2">Troubleshooting:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Make sure you are logged in</li>
+            <li>Have you added any emissions entries?</li>
+            <li>Check browser console for more details (F12 → Console tab)</li>
+            <li>Try refreshing the page (F5)</li>
+          </ul>
+        </div>
+      </div>
     );
   }
 
@@ -237,7 +248,9 @@ export function EmissionReport() {
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>No report data available. Please add company info and emission entries first.</AlertDescription>
+        <AlertDescription>
+          No report data available. Please add company info and emission entries first, then refresh this page.
+        </AlertDescription>
       </Alert>
     );
   }
