@@ -359,7 +359,7 @@ export function EmissionReport() {
                   <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
                   <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatNumber(reportData.scope_1_total)}</p>
                 </div>
-                {reportData.emissions?.scope1?.co2_mt > 0 && (
+                {reportData.emissions?.scope1 && reportData.emissions.scope1.co2_mt > 0 && (
                   <div className="pt-2 border-t border-red-200">
                     <p className="text-xs text-gray-500 dark:text-gray-400">CO₂</p>
                     <p className="text-sm text-red-600 dark:text-red-400">{formatNumber(reportData.emissions.scope1.co2_mt)} MT</p>
@@ -377,7 +377,7 @@ export function EmissionReport() {
                   <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
                   <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{formatNumber(reportData.scope_2_total)}</p>
                 </div>
-                {reportData.emissions?.scope2?.co2_mt > 0 && (
+                {reportData.emissions?.scope2 && reportData.emissions.scope2.co2_mt > 0 && (
                   <div className="pt-2 border-t border-amber-200">
                     <p className="text-xs text-gray-500 dark:text-gray-400">CO₂</p>
                     <p className="text-sm text-amber-600 dark:text-amber-400">{formatNumber(reportData.emissions.scope2.co2_mt)} MT</p>
@@ -395,7 +395,7 @@ export function EmissionReport() {
                   <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatNumber(reportData.scope_3_total)}</p>
                 </div>
-                {reportData.emissions?.scope3?.co2_mt > 0 && (
+                {reportData.emissions?.scope3 && reportData.emissions.scope3.co2_mt > 0 && (
                   <div className="pt-2 border-t border-blue-200">
                     <p className="text-xs text-gray-500 dark:text-gray-400">CO₂</p>
                     <p className="text-sm text-blue-600 dark:text-blue-400">{formatNumber(reportData.emissions.scope3.co2_mt)} MT</p>
