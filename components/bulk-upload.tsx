@@ -211,7 +211,7 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 							<input
 								ref={fileInputRef}
 								type="file"
-								accept=".pdf,.docx,.xlsx,.xls"
+								accept=".csv,.pdf,.docx,.xlsx,.xls"
 								onChange={handleFileChange}
 								disabled={isUploading}
 								className="hidden"
@@ -226,7 +226,7 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 									Click to upload or drag and drop
 								</span>
 								<span className="text-xs text-gray-500">
-									PDF, DOCX, or Excel files supported
+									CSV (recommended), PDF, DOCX, or Excel supported
 								</span>
 							</label>
 						</div>

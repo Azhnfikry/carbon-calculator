@@ -10,9 +10,12 @@ if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     const googleModule = require('@ai-sdk/google');
     generateText = aiModule.generateText;
     google = googleModule.google;
+    console.log('✅ Gemini API modules loaded successfully');
   } catch (e) {
-    console.warn('AI modules not available');
+    console.warn('⚠️ AI modules not available:', e);
   }
+} else {
+  console.log('⚠️ GOOGLE_GENERATIVE_AI_API_KEY not set - Gemini disabled');
 }
 
 export async function POST(request: NextRequest) {
