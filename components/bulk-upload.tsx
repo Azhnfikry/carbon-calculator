@@ -40,14 +40,16 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 
 		// Validate file type
 		const allowedTypes = [
+			"text/csv",
+			"application/csv",
 			"application/pdf",
 			"application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 			"application/vnd.ms-excel",
 		];
 
-		if (!allowedTypes.includes(file.type)) {
-			setError("Please upload a PDF, DOCX, or Excel file");
+		if (!allowedTypes.includes(file.type) && !file.name.endsWith(".csv")) {
+			setError("Please upload a CSV, PDF, DOCX, or Excel file");
 			return;
 		}
 
