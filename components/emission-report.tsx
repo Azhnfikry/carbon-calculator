@@ -308,7 +308,7 @@ export function EmissionReport() {
             <div className="border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 rounded-lg p-6">
               <p className="text-sm font-bold text-red-700 dark:text-red-400 uppercase mb-2">Scope 1</p>
               <p className="text-sm text-red-600 dark:text-red-300 mb-3">Direct Emissions</p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{reportData.scope_1_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{(reportData.scope_1_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-red-600 dark:text-red-500 mt-2">kg CO₂e</p>
             </div>
 
@@ -316,7 +316,7 @@ export function EmissionReport() {
             <div className="border-2 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20 rounded-lg p-6">
               <p className="text-sm font-bold text-amber-700 dark:text-amber-400 uppercase mb-2">Scope 2</p>
               <p className="text-sm text-amber-600 dark:text-amber-300 mb-3">Indirect Energy</p>
-              <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{reportData.scope_2_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{(reportData.scope_2_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">kg CO₂e</p>
             </div>
 
@@ -324,7 +324,7 @@ export function EmissionReport() {
             <div className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-6">
               <p className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase mb-2">Scope 3</p>
               <p className="text-sm text-blue-600 dark:text-blue-300 mb-3">Other Indirect</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{reportData.scope_3_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{(reportData.scope_3_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-blue-600 dark:text-blue-500 mt-2">kg CO₂e</p>
             </div>
 
@@ -332,7 +332,7 @@ export function EmissionReport() {
             <div className="border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/20 rounded-lg p-6">
               <p className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase mb-2">Total</p>
               <p className="text-sm text-purple-600 dark:text-purple-300 mb-3">All Scopes</p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{reportData.total_emissions.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{(reportData.total_emissions || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               <p className="text-xs text-purple-600 dark:text-purple-500 mt-2">kg CO₂e</p>
             </div>
           </div>
