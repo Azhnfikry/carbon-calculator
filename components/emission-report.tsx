@@ -87,6 +87,7 @@ export function EmissionReport() {
       }
 
       console.log('Data received, normalizing...');
+      console.log('Company info from API:', data.company_info);
       const normalizedData: ReportData = {
         generated_at: data.generated_at || new Date().toISOString(),
         company_name: data.company_name || data.company_info?.name || 'Not Provided',
@@ -102,7 +103,8 @@ export function EmissionReport() {
         scope_3_total: data.emissions?.scope3?.mtco2e || Number(data.scope_3_total) || 0,
         total_emissions: data.emissions?.total || Number(data.total_emissions) || 0,
         
-        // Keep new GHG Protocol data
+        // Keep new GHG Protocol data and company_info
+        company_info: data.company_info,
         emissions: data.emissions || {
           scope1: {
             mtco2e: data.scope_1_total || 0,
