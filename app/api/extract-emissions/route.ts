@@ -32,6 +32,15 @@ export async function POST(request: NextRequest) {
 
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     
+    // Excel files are not supported by Gemini - skip directly to error
+    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
+      return NextResponse.json({
+        success: false,
+        error: 'Excel files are not supported for automatic extraction.',
+        hint: 'Please convert your Excel file to CSV format using: File → Export As → CSV'
+      }, { status: 400 });
+    }
+    
     // For CSV files, try direct text extraction
     if (fileExtension === 'csv' || file.type === 'text/csv') {
       try {
@@ -50,8 +59,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // For other file types (PDF, DOCX), try Gemini if API key is available
-    // Note: Excel/XLSX not supported by Gemini, skip to fallback
+    // For PDF/DOCX, try Gemini if API key is available
     if (process.env.GOOGLE_GENERATIVE_AI_API_KEY && generateText && google && 
         (fileExtension === 'pdf' || fileExtension === 'docx')) {
       console.log('🤖 Using Gemini API for', fileExtension, 'extraction...');
@@ -74,19 +82,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fallback message
-    if (fileExtension === 'xlsx' || fileExtension === 'xls') {
-      return NextResponse.json({
-        success: false,
-        error: 'Excel extraction requires Google API key. Convert to CSV or configure GOOGLE_GENERATIVE_AI_API_KEY.',
-        hint: 'File → Export → CSV format'
-      }, { status: 400 });
-    }
-
+    // Fallback message for unsupported formats
     if (fileExtension === 'pdf' || fileExtension === 'docx') {
       return NextResponse.json({
         success: false,
-        error: 'PDF/DOCX extraction requires Google Gemini API. Configure GOOGLE_GENERATIVE_AI_API_KEY environment variable.',
+        error: 'PDF/DOCX extraction requires Google Gemini API key. Configure GOOGLE_GENERATIVE_AI_API_KEY environment variable.',
         hint: 'Or convert your file to CSV for immediate support'
       }, { status: 400 });
     }
