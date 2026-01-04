@@ -365,7 +365,7 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 				</CardHeader>
 				<CardContent className="space-y-2 text-sm">
 					<p>
-						<strong>1. Prepare Document:</strong> Create a document (PDF, Word, or Excel)
+						<strong>1. Prepare Document:</strong> Create a CSV file (recommended), PDF, or Word document 
 						with emission data in the following format:
 					</p>
 					<ul className="list-disc list-inside ml-2 space-y-1">
@@ -374,9 +374,12 @@ export function BulkUpload({ user, onUploadSuccess }: BulkUploadProps) {
 						<li>Column 3: Quantity (number)</li>
 						<li>Column 4: Unit (kWh, liters, km, etc.)</li>
 					</ul>
+					<p className="mt-3 text-xs text-gray-600">
+						💡 <strong>Tip:</strong> CSV files work instantly. PDF/Word files require Gemini API key. 
+						Excel files must be converted to CSV.
+					</p>
 					<p className="mt-3">
-						<strong>2. Upload File:</strong> Click "Select File" and choose your prepared
-						document
+						<strong>2. Upload File:</strong> Click "Select File" and choose your prepared document (CSV, PDF, or DOCX)
 					</p>
 					<p>
 						<strong>3. Review Data:</strong> Check the preview table to ensure all entries
