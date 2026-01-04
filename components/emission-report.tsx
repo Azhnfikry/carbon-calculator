@@ -255,12 +255,21 @@ export function EmissionReport() {
     );
   }
 
+  // Helper function to format numbers
+  const formatNumber = (value: number | undefined, decimals: number = 2): string => {
+    if (!value && value !== 0) return 'N/A';
+    return parseFloat(String(value)).toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">GHG Emissions Inventory Report</h2>
-          <p className="text-muted-foreground text-sm">Scope 1, 2 & 3 Cumulative Summary</p>
+          <p className="text-muted-foreground text-sm">Scope 1, 2 & 3 Professional Report</p>
         </div>
         <Button
           onClick={downloadPDF}
@@ -273,100 +282,244 @@ export function EmissionReport() {
       </div>
 
       {/* Printable Report */}
-      <div ref={reportRef} className="bg-white dark:bg-slate-950 p-8 rounded-lg border border-gray-200 dark:border-slate-800 space-y-6">
+      <div ref={reportRef} className="bg-white dark:bg-slate-950 p-8 rounded-lg border border-gray-200 dark:border-slate-800 space-y-8">
         {/* Header */}
         <div className="border-b-4 border-green-600 pb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Carbon Emissions Report</h1>
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-            <span>Generated: {reportData.generated_at}</span>
-            <span>Prepared for: {reportData.user_name}</span>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">GHG EMISSIONS INVENTORY REPORT</h1>
+          <div className="grid grid-cols-2 gap-6 text-sm text-gray-600 dark:text-gray-400 mt-4">
+            <div>
+              <p className="text-xs uppercase font-semibold">Generated</p>
+              <p>{new Date(reportData.generated_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase font-semibold">Inventory Year</p>
+              <p>{reportData.inventory_year}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs uppercase font-semibold">Prepared By</p>
+              <p>{reportData.user_name}</p>
+              <p className="text-xs">{reportData.user_email}</p>
+            </div>
           </div>
         </div>
 
-        {/* Company Information Section */}
-        <div className="bg-gray-50 dark:bg-slate-900 p-6 rounded-lg space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-green-600 pb-3">
-            Part 1: Company Information
+        {/* SECTION 1: Company Information */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white border-b-3 border-green-600 pb-3 mb-6">
+            1. COMPANY INFORMATION
           </h2>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-6 mb-6">
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Company Name</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase">Company Name</p>
               <p className="text-lg text-gray-900 dark:text-white">{reportData.company_name || 'Not provided'}</p>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Inventory Year</p>
-              <p className="text-lg text-gray-900 dark:text-white">{reportData.inventory_year || new Date().getFullYear()}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase">Contact</p>
+              <p className="text-lg text-gray-900 dark:text-white">{reportData.user_email}</p>
             </div>
           </div>
 
           {reportData.company_description && (
-            <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Description</p>
-              <p className="text-gray-700 dark:text-gray-300">{reportData.company_description}</p>
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase">Company Description</p>
+              <p className="text-gray-700 dark:text-gray-300 mt-2">{reportData.company_description}</p>
             </div>
           )}
 
           {reportData.business_description && (
             <div>
-              <p className="text-sm font-semibold text-gray-600 dark:text-gray-400 uppercase">Business Description</p>
-              <p className="text-gray-700 dark:text-gray-300">{reportData.business_description}</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase">Business Activities</p>
+              <p className="text-gray-700 dark:text-gray-300 mt-2">{reportData.business_description}</p>
             </div>
           )}
         </div>
 
-        {/* Emissions Summary Section */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white border-b-2 border-green-600 pb-3">
-            Part 2: GHG Emissions Summary
+        {/* SECTION 2: Emissions Summary - Main */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white border-b-3 border-green-600 pb-3 mb-6">
+            2. GHG EMISSIONS SUMMARY
           </h2>
 
-          {/* Emissions Cards - All Three Scopes */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Scope 1 Card */}
-            <div className="border-2 border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 rounded-lg p-6">
-              <p className="text-sm font-bold text-red-700 dark:text-red-400 uppercase mb-2">Scope 1</p>
-              <p className="text-sm text-red-600 dark:text-red-300 mb-3">Direct Emissions</p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{(reportData.scope_1_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              <p className="text-xs text-red-600 dark:text-red-500 mt-2">kg CO₂e</p>
+          {/* Total Emissions Headline */}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-600 rounded-lg p-6 mb-6">
+            <p className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase">Total GHG Emissions (All Scopes)</p>
+            <p className="text-5xl font-bold text-green-700 dark:text-green-400 mt-2">{formatNumber(reportData.total_emissions)}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">metric tons CO₂e</p>
+          </div>
+
+          {/* Three Scopes Grid */}
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            {/* Scope 1 */}
+            <div className="border-2 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20 rounded-lg p-5">
+              <p className="text-sm font-bold text-red-700 dark:text-red-400 uppercase mb-3">Scope 1</p>
+              <p className="text-sm text-red-600 dark:text-red-300 mb-4 font-semibold">Direct Emissions</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatNumber(reportData.scope_1_total)}</p>
+                </div>
+                {reportData.emissions?.scope1?.co2_mt > 0 && (
+                  <div className="pt-2 border-t border-red-200">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">CO₂</p>
+                    <p className="text-sm text-red-600 dark:text-red-400">{formatNumber(reportData.emissions.scope1.co2_mt)} MT</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Scope 2 Card */}
-            <div className="border-2 border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/20 rounded-lg p-6">
-              <p className="text-sm font-bold text-amber-700 dark:text-amber-400 uppercase mb-2">Scope 2</p>
-              <p className="text-sm text-amber-600 dark:text-amber-300 mb-3">Indirect Energy</p>
-              <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{(reportData.scope_2_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">kg CO₂e</p>
+            {/* Scope 2 */}
+            <div className="border-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 rounded-lg p-5">
+              <p className="text-sm font-bold text-amber-700 dark:text-amber-400 uppercase mb-3">Scope 2</p>
+              <p className="text-sm text-amber-600 dark:text-amber-300 mb-4 font-semibold">Indirect Energy</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
+                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{formatNumber(reportData.scope_2_total)}</p>
+                </div>
+                {reportData.emissions?.scope2?.co2_mt > 0 && (
+                  <div className="pt-2 border-t border-amber-200">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">CO₂</p>
+                    <p className="text-sm text-amber-600 dark:text-amber-400">{formatNumber(reportData.emissions.scope2.co2_mt)} MT</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Scope 3 Card */}
-            <div className="border-2 border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-6">
-              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase mb-2">Scope 3</p>
-              <p className="text-sm text-blue-600 dark:text-blue-300 mb-3">Other Indirect</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{(reportData.scope_3_total || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              <p className="text-xs text-blue-600 dark:text-blue-500 mt-2">kg CO₂e</p>
-            </div>
-
-            {/* Total Emissions Card */}
-            <div className="border-2 border-purple-200 dark:border-purple-900 bg-purple-50 dark:bg-purple-950/20 rounded-lg p-6">
-              <p className="text-sm font-bold text-purple-700 dark:text-purple-400 uppercase mb-2">Total</p>
-              <p className="text-sm text-purple-600 dark:text-purple-300 mb-3">All Scopes</p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{(reportData.total_emissions || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-              <p className="text-xs text-purple-600 dark:text-purple-500 mt-2">kg CO₂e</p>
+            {/* Scope 3 */}
+            <div className="border-2 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-5">
+              <p className="text-sm font-bold text-blue-700 dark:text-blue-400 uppercase mb-3">Scope 3</p>
+              <p className="text-sm text-blue-600 dark:text-blue-300 mb-4 font-semibold">Other Indirect</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Total</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatNumber(reportData.scope_3_total)}</p>
+                </div>
+                {reportData.emissions?.scope3?.co2_mt > 0 && (
+                  <div className="pt-2 border-t border-blue-200">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">CO₂</p>
+                    <p className="text-sm text-blue-600 dark:text-blue-400">{formatNumber(reportData.emissions.scope3.co2_mt)} MT</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Summary Note */}
-          <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg mt-4">
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              <strong>Scope 1:</strong> Direct emissions from owned or controlled sources. <strong>Scope 2:</strong> Indirect emissions from purchased electricity, steam, or heating. <strong>Scope 3:</strong> Other indirect emissions from the value chain.
-            </p>
+          {/* Scope Definitions */}
+          <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg text-xs text-gray-600 dark:text-gray-400 space-y-2">
+            <p><strong>Scope 1 - Direct Emissions:</strong> GHG emissions from sources owned or controlled by the company (e.g., fuel combustion, process emissions).</p>
+            <p><strong>Scope 2 - Indirect Energy Emissions:</strong> GHG emissions from the generation of purchased electricity, steam, heating, and cooling.</p>
+            <p><strong>Scope 3 - Other Indirect Emissions:</strong> All other indirect emissions from company's value chain not covered in Scopes 1 or 2.</p>
+          </div>
+        </div>
+
+        {/* SECTION 3: Gas Breakdown */}
+        {reportData.emissions && (
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white border-b-3 border-green-600 pb-3 mb-6">
+              3. GHG EMISSIONS BY GAS TYPE
+            </h2>
+
+            <div className="space-y-4">
+              {/* Scope 1 Gases */}
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white mb-3">Scope 1 - Direct Emissions</p>
+                <div className="grid grid-cols-4 gap-3 text-sm">
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">CO₂</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope1?.co2_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">CH₄</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope1?.ch4_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">N₂O</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope1?.n2o_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total CO₂e</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope1?.mtco2e || 0)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scope 2 Gases */}
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white mb-3">Scope 2 - Indirect Energy</p>
+                <div className="grid grid-cols-4 gap-3 text-sm">
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">CO₂</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope2?.co2_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">CH₄</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope2?.ch4_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">N₂O</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope2?.n2o_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total CO₂e</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope2?.mtco2e || 0)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scope 3 Gases */}
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white mb-3">Scope 3 - Other Indirect</p>
+                <div className="grid grid-cols-4 gap-3 text-sm">
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">CO₂</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope3?.co2_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">CH₄</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope3?.ch4_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">N₂O</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope3?.n2o_mt || 0)}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-slate-900 p-3 rounded">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">Total CO₂e</p>
+                    <p className="font-bold text-gray-900 dark:text-white">{formatNumber(reportData.emissions.scope3?.mtco2e || 0)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION 4: Calculation Methodology */}
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white border-b-3 border-green-600 pb-3 mb-6">
+            4. METHODOLOGY & STANDARDS
+          </h2>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Standards Applied</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">GHG Protocol Corporate Accounting and Reporting Standard</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Emission Factors</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">IPCC AR6, EPA Guidelines, DEFRA/BEIS Data</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Calculation Approach</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Emissions = Activity Data × Emission Factor × Global Warming Potential (GWP)</p>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t pt-4 text-center text-xs text-gray-600 dark:text-gray-400">
-          <p>© {new Date().getFullYear()} Carbon Calculator Report</p>
+        <div className="border-t-2 border-gray-300 pt-6 text-center text-xs text-gray-600 dark:text-gray-400 space-y-2">
+          <p><strong>Report Prepared:</strong> {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p>© {new Date().getFullYear()} Carbon Calculator - GHG Emissions Inventory Report</p>
+          <p className="italic">This report is based on data provided by the user and calculated using industry-standard emission factors.</p>
         </div>
       </div>
     </div>
