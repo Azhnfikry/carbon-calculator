@@ -18,7 +18,7 @@ export const extractDataFromDocument = async (
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `
-You are an expert at extracting emissions data from utility bills, invoices, and fuel consumption documents.
+You are an expert at extracting emissions data from utility bills, fuel receipts, and invoices.
 
 ANALYZE THIS DOCUMENT AND EXTRACT THE MAIN CONSUMPTION QUANTITY:
 
@@ -26,40 +26,49 @@ RULES:
 1. Look for these QUANTITY FIELDS (in priority order):
    - "Penggunaan" (Malaysian bills)
    - "Usage" / "Consumption" / "Total Usage"
-   - "Quantity" / "KUANTITI"
-   - "Volume" / "Amount"
+   - "Quantity" / "KUANTITI" / "KUANTITI BELIAN"
+   - "Volume" / "Amount" / "Jumlah"
    - "kWh" / "kWH" / "KWH" (for electricity)
    - "Liters" / "LTR" / "L" (for fuel)
+   - Fuel type indicators: "Diesel", "Petrol", "RON95", "RON97"
 
-2. IGNORE:
+2. FUEL TYPE DETECTION (Petronas SmartPay & fuel receipts):
+   - Look for: "Diesel", "Premium Diesel", "DIESEL"
+   - Look for: "Petrol", "RON95", "RON97", "PETROL"
+   - If "Diesel" mentioned → Type = "Fuel (Diesel)"
+   - If "Petrol" or "RON" mentioned → Type = "Fuel (Petrol)"
+   - Default for fuel = "Fuel (Diesel)" (if supplier is Petronas/Shell/fuel station)
+
+3. IGNORE:
    - Previous balances
    - Payment amounts
    - Dates alone (unless explicitly labeled as usage)
    - Charges/costs/prices
 
-3. DOCUMENT TYPE DETECTION:
+4. DOCUMENT TYPE DETECTION:
    - If has "kWh", "Electricity", "Electric", "Kilowatt": Type = "Electricity"
-   - If has "Fuel", "Petrol", "Diesel", "Petrol", "Liter", "LTR": Type = "Fuel (Diesel)" or "Fuel (Petrol)"
+   - If has "Fuel", "Petrol", "Diesel", "RON", "Liter", "LTR", "PETRONAS", "SmartPay", "Shell": Type = "Fuel (Diesel)" or "Fuel (Petrol)"
    - If has "Travel", "Transport", "km": Type = "Transport"
 
-4. SUPPLIER DETECTION:
+5. SUPPLIER DETECTION:
    - Extract company name from bill header
-   - Common: TNB, Petronas, Tenaga Nasional Berhad, etc.
+   - Common: TNB, Petronas, Shell, Tenaga Nasional Berhad, etc.
+   - For Petronas: Look for "PETRONAS SmartPay" or "Petronas"
 
-5. OUTPUT FORMAT - MUST BE VALID JSON:
+6. OUTPUT FORMAT - MUST BE VALID JSON:
 {
   "value": <number only, no units>,
   "unit": "<kWh or liters or km>",
   "detectedDataType": "<Electricity|Fuel (Diesel)|Fuel (Petrol)|Transport>",
   "supplierName": "<company name>",
   "confidence": <0.0 to 1.0>,
-  "reasoning": "<explain what you found>"
+  "reasoning": "<explain what you found and fuel type if applicable>"
 }
 
 IMPORTANT:
 - value must be a NUMBER (not string)
 - confidence should be HIGH (0.8+) if clearly labeled
-- If unsure, return confidence < 0.5
+- For Petronas: Always check if document mentions Diesel or Petrol
 - Return ONLY valid JSON, no explanations
   `;
 
