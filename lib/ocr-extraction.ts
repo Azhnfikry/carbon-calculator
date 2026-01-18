@@ -22,6 +22,12 @@ You are an expert at extracting emissions data from utility bills, fuel receipts
 
 ANALYZE THIS DOCUMENT AND EXTRACT THE MAIN CONSUMPTION QUANTITY:
 
+SPECIAL INSTRUCTION FOR MULTI-FUEL DOCUMENTS:
+If the document contains BOTH Petrol AND Diesel data (like Petronas SmartPay):
+- Extract BOTH fuel types
+- Return the PRIMARY/LARGEST quantity
+- Include BOTH values in the reasoning with format: "Petrol: X liters, Diesel: Y liters"
+
 RULES:
 1. Look for these QUANTITY FIELDS (in priority order):
    - "Penggunaan" (Malaysian bills)
@@ -30,14 +36,14 @@ RULES:
    - "Volume" / "Amount" / "Jumlah"
    - "kWh" / "kWH" / "KWH" (for electricity)
    - "Liters" / "LTR" / "L" (for fuel)
-   - Fuel type indicators: "Diesel", "Petrol", "RON95", "RON97"
+   - Fuel type indicators: "Diesel", "Petrol", "RON95", "RON97", "PRIMAX", "V-POWER"
 
 2. FUEL TYPE DETECTION (Petronas SmartPay & fuel receipts):
-   - Look for: "Diesel", "Premium Diesel", "DIESEL"
-   - Look for: "Petrol", "RON95", "RON97", "PETROL"
-   - If "Diesel" mentioned → Type = "Fuel (Diesel)"
-   - If "Petrol" or "RON" mentioned → Type = "Fuel (Petrol)"
-   - Default for fuel = "Fuel (Diesel)" (if supplier is Petronas/Shell/fuel station)
+   - Look for BOTH: "Diesel", "Premium Diesel", "DIESEL"
+   - Look for BOTH: "Petrol", "RON95", "RON97", "PETROL", "PRIMAX", "V-POWER"
+   - If BOTH found: Extract both quantities
+   - Return the larger quantity as main value
+   - List all fuels in reasoning: "Found Petrol: X liters, Diesel: Y liters"
 
 3. IGNORE:
    - Previous balances
@@ -47,28 +53,37 @@ RULES:
 
 4. DOCUMENT TYPE DETECTION:
    - If has "kWh", "Electricity", "Electric", "Kilowatt": Type = "Electricity"
-   - If has "Fuel", "Petrol", "Diesel", "RON", "Liter", "LTR", "PETRONAS", "SmartPay", "Shell": Type = "Fuel (Diesel)" or "Fuel (Petrol)"
+   - If has BOTH "Diesel" AND "Petrol": Type = "Fuel (Diesel)" if diesel > petrol, else "Fuel (Petrol)"
+   - If has only "Diesel", "Premium Diesel": Type = "Fuel (Diesel)"
+   - If has only "Petrol", "RON95", "RON97": Type = "Fuel (Petrol)"
    - If has "Travel", "Transport", "km": Type = "Transport"
 
 5. SUPPLIER DETECTION:
    - Extract company name from bill header
    - Common: TNB, Petronas, Shell, Tenaga Nasional Berhad, etc.
-   - For Petronas: Look for "PETRONAS SmartPay" or "Petronas"
 
 6. OUTPUT FORMAT - MUST BE VALID JSON:
 {
-  "value": <number only, no units>,
+  "value": <number only, no units - PRIMARY quantity if multi-fuel, else total>,
   "unit": "<kWh or liters or km>",
   "detectedDataType": "<Electricity|Fuel (Diesel)|Fuel (Petrol)|Transport>",
   "supplierName": "<company name>",
   "confidence": <0.0 to 1.0>,
-  "reasoning": "<explain what you found and fuel type if applicable>"
+  "reasoning": "<explain what you found. CRITICAL: If multi-fuel (both Petrol AND Diesel found), ALWAYS include exact quantities: 'Petrol: X liters, Diesel: Y liters'>",
+  "secondaryValue": <optional - for multi-fuel: the secondary fuel quantity>,
+  "secondaryDataType": "<optional - for multi-fuel: the secondary fuel type>"
 }
 
 IMPORTANT:
 - value must be a NUMBER (not string)
+- For MULTI-FUEL documents (both Petrol AND Diesel):
+  * Extract BOTH quantities precisely
+  * Return larger quantity as "value"
+  * Return smaller quantity as "secondaryValue"
+  * Set detectedDataType to the fuel type with larger quantity
+  * Set secondaryDataType to the other fuel type
+  * reasoning MUST list both: "Petrol: X liters, Diesel: Y liters"
 - confidence should be HIGH (0.8+) if clearly labeled
-- For Petronas: Always check if document mentions Diesel or Petrol
 - Return ONLY valid JSON, no explanations
   `;
 
@@ -101,7 +116,12 @@ IMPORTANT:
             },
             supplierName: { type: Type.STRING },
             confidence: { type: Type.NUMBER },
-            reasoning: { type: Type.STRING }
+            reasoning: { type: Type.STRING },
+            secondaryValue: { type: Type.NUMBER },
+            secondaryDataType: { 
+              type: Type.STRING, 
+              enum: ["Electricity", "Fuel (Diesel)", "Fuel (Petrol)", "Transport"]
+            }
           },
           required: ["value", "unit", "detectedDataType", "confidence"],
         },

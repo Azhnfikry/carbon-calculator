@@ -41,13 +41,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       extractedData: {
+        value: extractedData.value,
         quantity: extractedData.value,
         unit: extractedData.unit,
         date: new Date().toISOString().split('T')[0], // Use today's date
         confidence: extractedData.confidence,
+        detectedDataType: extractedData.detectedDataType,
         dataType: extractedData.detectedDataType,
+        supplierName: extractedData.supplierName,
         supplier: extractedData.supplierName,
         reasoning: extractedData.reasoning,
+        secondaryValue: extractedData.secondaryValue,
+        secondaryDataType: extractedData.secondaryDataType,
       },
       fileName: file.name,
       fileSize: file.size,

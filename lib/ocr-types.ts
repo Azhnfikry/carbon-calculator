@@ -8,4 +8,7 @@ export interface ExtractionResult {
   supplierName: string;
   confidence: number;
   reasoning?: string;
+  // Multi-fuel support: for Petronas documents with both petrol and diesel
+  secondaryValue?: number;
+  secondaryDataType?: DataType;
 }

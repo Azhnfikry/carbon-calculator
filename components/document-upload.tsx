@@ -69,10 +69,15 @@ export default function DocumentUpload({ onFileUpload, onRemove, uploadedFile }:
       
       if (result.success && result.extractedData) {
         const extractedData = {
-          quantity: result.extractedData.quantity,
+          quantity: result.extractedData.value || result.extractedData.quantity,
           unit: result.extractedData.unit,
           date: result.extractedData.date,
           confidence: result.extractedData.confidence,
+          dataType: result.extractedData.detectedDataType,
+          supplier: result.extractedData.supplierName,
+          reasoning: result.extractedData.reasoning,
+          secondaryValue: result.extractedData.secondaryValue,
+          secondaryDataType: result.extractedData.secondaryDataType,
         };
         
         onFileUpload(file, extractedData);

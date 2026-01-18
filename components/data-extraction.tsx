@@ -62,13 +62,23 @@ export default function DataExtraction({ extractedData, onDataConfirm }: DataExt
           <AlertDescription className="text-sm text-slate-700">
             Extraction confidence: <strong>{confidencePercentage}%</strong>
             {confidencePercentage < 90 && ' - Please verify the values below'}
+            {extractedData.secondaryValue !== undefined && ' - Multi-fuel document detected'}
           </AlertDescription>
         </Alert>
+
+        {/* Show reasoning if available */}
+        {extractedData.reasoning && (
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertDescription className="text-sm text-slate-700">
+              <strong>Extraction Details:</strong> {extractedData.reasoning}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="extracted-quantity">
-              Quantity {isEdited && <span className="text-xs text-blue-600">(edited)</span>}
+              {extractedData.dataType || 'Quantity'} {isEdited && <span className="text-xs text-blue-600">(edited)</span>}
             </Label>
             <Input
               id="extracted-quantity"
@@ -78,6 +88,7 @@ export default function DataExtraction({ extractedData, onDataConfirm }: DataExt
               className="bg-white"
               step="0.01"
             />
+            <p className="text-xs text-slate-500">Primary: {extractedData.dataType}</p>
           </div>
 
           <div className="space-y-2">
@@ -106,6 +117,23 @@ export default function DataExtraction({ extractedData, onDataConfirm }: DataExt
             />
           </div>
         </div>
+
+        {/* Multi-fuel display */}
+        {extractedData.secondaryValue !== undefined && (
+          <div className="border-t-2 border-blue-200 pt-4">
+            <p className="text-sm font-semibold text-slate-700 mb-3">
+              Secondary Fuel Type Detected
+            </p>
+            <div className="bg-blue-50 p-3 rounded-md">
+              <p className="text-sm text-slate-700">
+                <strong>{extractedData.secondaryDataType}:</strong> {extractedData.secondaryValue} {unit}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                You can enter this as a separate emission entry in the form below if needed.
+              </p>
+            </div>
+          </div>
+        )}
 
         <p className="text-sm text-slate-600 pt-2">
           <strong>Tip:</strong> Make sure the quantity and unit match what's on your document.

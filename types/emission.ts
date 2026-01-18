@@ -36,6 +36,11 @@ export interface ExtractedData {
   unit: string;
   date: string;
   confidence: number; // 0-1 for OCR confidence
+  dataType?: string; // e.g., "Fuel (Petrol)", "Fuel (Diesel)", "Electricity"
+  supplier?: string; // e.g., "PETRONAS", "TNB"
+  reasoning?: string; // Explanation from OCR
+  secondaryValue?: number; // For multi-fuel documents
+  secondaryDataType?: string; // For multi-fuel documents
 }
 
 export interface Profile {
