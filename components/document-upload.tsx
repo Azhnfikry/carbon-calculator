@@ -17,28 +17,6 @@ export default function DocumentUpload({ onFileUpload, onRemove, uploadedFile }:
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Simulate OCR extraction or call API
-  const simulateOCRExtraction = (file: File): ExtractedData => {
-    // In production, this would call a real OCR API (Google Vision, AWS Textract, etc.)
-    // For MVP, we generate plausible random values
-    
-    const randomQuantity = Math.floor(Math.random() * 10000) + 1000;
-    const units = ['kWh', 'liters', 'km', 'gallons', 'Nm³', 'kg'];
-    const randomUnit = units[Math.floor(Math.random() * units.length)];
-
-    // Random date within last 3 months
-    const today = new Date();
-    const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
-    const randomDate = new Date(threeMonthsAgo.getTime() + Math.random() * (today.getTime() - threeMonthsAgo.getTime()));
-
-    return {
-      quantity: randomQuantity,
-      unit: randomUnit,
-      date: randomDate.toISOString().split('T')[0],
-      confidence: 0.85, // Simulated confidence score
-    };
-  };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -56,7 +34,7 @@ export default function DocumentUpload({ onFileUpload, onRemove, uploadedFile }:
     }
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     // Validate file type
     const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
     if (!validTypes.includes(file.type)) {
@@ -72,14 +50,42 @@ export default function DocumentUpload({ onFileUpload, onRemove, uploadedFile }:
 
     setIsProcessing(true);
 
-    // Simulate OCR extraction
-    const extractedData = simulateOCRExtraction(file);
-    
-    // Simulate processing delay
-    setTimeout(() => {
-      onFileUpload(file, extractedData);
+    try {
+      // Call the real Gemini OCR API
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/ocr', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to extract data');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.extractedData) {
+        const extractedData = {
+          quantity: result.extractedData.quantity,
+          unit: result.extractedData.unit,
+          date: result.extractedData.date,
+          confidence: result.extractedData.confidence,
+        };
+        
+        onFileUpload(file, extractedData);
+        console.log('✅ OCR extraction successful:', extractedData);
+      } else {
+        throw new Error(result.error || 'Failed to extract data from document');
+      }
+    } catch (error: any) {
+      console.error('OCR extraction error:', error);
+      alert('Failed to extract data: ' + (error.message || 'Unknown error'));
+    } finally {
       setIsProcessing(false);
-    }, 1000);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {

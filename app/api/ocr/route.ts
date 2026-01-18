@@ -1,5 +1,6 @@
-// OCR API route for document-based extraction
+// OCR API route for document-based extraction using Google Gemini
 import { NextRequest, NextResponse } from 'next/server';
+import { extractDataFromDocument } from '@/lib/ocr-extraction';
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,28 +31,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For MVP, simulate OCR extraction
-    // TODO: Integrate with actual OCR service (Google Vision API, AWS Textract, etc.)
-    const simulatedExtraction = {
-      quantity: Math.floor(Math.random() * 10000) + 1000,
-      unit: ['kWh', 'liters', 'km', 'gallons', 'Nm³', 'kg'][
-        Math.floor(Math.random() * 6)
-      ],
-      date: new Date().toISOString().split('T')[0],
-      confidence: 0.85 + Math.random() * 0.14, // 0.85 - 0.99
-    };
+    // Convert file to base64
+    const buffer = await file.arrayBuffer();
+    const base64String = Buffer.from(buffer).toString('base64');
+
+    // Call Google Gemini for OCR extraction
+    const extractedData = await extractDataFromDocument(base64String, file.type);
 
     return NextResponse.json({
       success: true,
-      extractedData: simulatedExtraction,
+      extractedData: {
+        quantity: extractedData.value,
+        unit: extractedData.unit,
+        date: new Date().toISOString().split('T')[0], // Use today's date
+        confidence: extractedData.confidence,
+        dataType: extractedData.detectedDataType,
+        supplier: extractedData.supplierName,
+        reasoning: extractedData.reasoning,
+      },
       fileName: file.name,
       fileSize: file.size,
       message: 'OCR extraction completed successfully',
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('OCR extraction error:', error);
     return NextResponse.json(
-      { error: 'Failed to process document' },
+      { error: error.message || 'Failed to process document' },
       { status: 500 }
     );
   }

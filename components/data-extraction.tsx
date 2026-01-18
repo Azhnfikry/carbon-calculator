@@ -50,10 +50,10 @@ export default function DataExtraction({ extractedData, onDataConfirm }: DataExt
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-blue-600" />
-          Data Extracted from Document
+          Data Extracted from Document (Gemini OCR)
         </CardTitle>
         <CardDescription>
-          We found the following information. Please review and correct if needed.
+          Powered by Google Gemini AI. Please review and correct if needed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
