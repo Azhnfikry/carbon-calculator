@@ -31,6 +31,13 @@ export interface EmissionFactor {
 	year?: number;
 }
 
+export interface ExtractedData {
+  quantity: number;
+  unit: string;
+  date: string;
+  confidence: number; // 0-1 for OCR confidence
+}
+
 export interface Profile {
   id: string
   full_name?: string

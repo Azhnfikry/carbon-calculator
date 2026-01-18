@@ -10,10 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Plus, Calculator, LogIn, Upload } from "lucide-react";
+import { Plus, Calculator, LogIn, Upload, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { calculateCO2Equivalent } from "@/lib/emission-calculations";
-import type { EmissionFactor } from "@/types/emission";
+import DocumentUpload from "@/components/document-upload";
+import DataExtraction from "@/components/data-extraction";
+import type { EmissionFactor, ExtractedData } from "@/types/emission";
 import type { User } from "@supabase/supabase-js";
 
 interface EmissionFormProps {
@@ -42,6 +44,11 @@ export function EmissionForm({ onEntryAdded, user, onBulkUploadClick }: Emission
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
 	const [emissionFactors, setEmissionFactors] = useState<EmissionFactor[]>([]);
+	
+	// OCR states
+	const [useOCR, setUseOCR] = useState(false);
+	const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+	const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
 
 	const supabase = createClient();
 
@@ -71,6 +78,22 @@ export function EmissionForm({ onEntryAdded, user, onBulkUploadClick }: Emission
 			setUnit(factor.unit);
 			setEmissionFactor(factor.factor.toString());
 		}
+	};
+
+	const handleFileUpload = (file: File, data: ExtractedData) => {
+		setUploadedFile(file);
+		setExtractedData(data);
+	};
+
+	const handleRemoveFile = () => {
+		setUploadedFile(null);
+		setExtractedData(null);
+	};
+
+	const handleDataConfirm = (qty: number, unit: string, date: string) => {
+		setQuantity(qty.toString());
+		setUnit(unit);
+		setDate(date);
 	};
 
 	const handleScopeChange = (value: string) => {
@@ -159,7 +182,7 @@ export function EmissionForm({ onEntryAdded, user, onBulkUploadClick }: Emission
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="mb-4">
+					<div className="mb-4 space-y-2">
 						<Button 
 							type="button" 
 							variant="outline" 
@@ -169,7 +192,32 @@ export function EmissionForm({ onEntryAdded, user, onBulkUploadClick }: Emission
 							<Upload className="h-4 w-4" />
 							Bulk Upload Multiple Entries
 						</Button>
+						<Button 
+							type="button" 
+							variant="outline" 
+							className={`flex items-center gap-2 w-full ${useOCR ? 'bg-blue-50 border-blue-500' : ''}`}
+							onClick={() => setUseOCR(!useOCR)}
+						>
+							<FileText className="h-4 w-4" />
+							{useOCR ? 'Hide OCR Document Upload' : 'Extract from Document (OCR)'}
+						</Button>
 					</div>
+
+					{useOCR && (
+						<div className="mb-6 space-y-4">
+							<DocumentUpload 
+								onFileUpload={handleFileUpload}
+								onRemove={handleRemoveFile}
+								uploadedFile={uploadedFile}
+							/>
+							{extractedData && (
+								<DataExtraction 
+									extractedData={extractedData}
+									onDataConfirm={handleDataConfirm}
+								/>
+							)}
+						</div>
+					)}
 
 					{!user && (
 						<Alert className="mb-4">
