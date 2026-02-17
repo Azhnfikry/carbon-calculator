@@ -7,21 +7,24 @@ export default async function HomePage() {
 
   try {
     const supabase = await createClient()
-    const { data, error } = await supabase.auth.getUser()
-    user = data?.user || null
+    try {
+      const { data, error } = await supabase.auth.getUser()
+      user = data?.user || null
 
-    // Get user profile only if user is authenticated
-    if (user) {
-      try {
-        const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single()
-        profile = profileData
-      } catch (profileError) {
-        console.warn('Profile fetch error:', profileError)
+      // Get user profile only if user is authenticated
+      if (user) {
+        try {
+          const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+          profile = profileData
+        } catch (profileError) {
+          // Silently ignore profile fetch errors
+        }
       }
+    } catch (authError) {
+      // Silently handle auth errors - app works in offline mode
     }
   } catch (error) {
-    console.warn('Auth or Supabase connection error - continuing in offline mode:', error)
-    // App will work without auth/profile in offline mode
+    // Silently handle Supabase connection errors
   }
 
   return <CarbonDashboard user={user} profile={profile} />

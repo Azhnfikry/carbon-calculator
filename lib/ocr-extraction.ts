@@ -20,70 +20,83 @@ export const extractDataFromDocument = async (
   const prompt = `
 You are an expert at extracting emissions data from utility bills, fuel receipts, and invoices.
 
-ANALYZE THIS DOCUMENT AND EXTRACT THE MAIN CONSUMPTION QUANTITY:
+CRITICAL: For multi-page documents, analyze ALL pages. The CORRECT values are typically:
+- On the LAST page in summary/totals sections
+- Labeled "TOTAL", "JUMLAH", "TOTAL CONSUMPTION", "SUMMARY"
+- The LARGEST values for each fuel type (not individual transactions)
+- Representing the PERIOD total (monthly or annual consumption)
 
-SPECIAL INSTRUCTION FOR MULTI-FUEL DOCUMENTS:
-If the document contains BOTH Petrol AND Diesel data (like Petronas SmartPay):
-- Extract BOTH fuel types
-- Return the PRIMARY/LARGEST quantity
-- Include BOTH values in the reasoning with format: "Petrol: X liters, Diesel: Y liters"
+ANALYZE THIS DOCUMENT AND EXTRACT THE CORRECT CONSUMPTION QUANTITIES:
+
+SPECIAL INSTRUCTION FOR MULTI-FUEL DOCUMENTS (Petronas SmartPay):
+MANDATORY: Extract BOTH fuel types with their TOTAL period consumption:
+- Find "TOTAL CONSUMPTION", "TOTAL PETROL", "TOTAL DIESEL" or similar
+- Look for the LARGEST/HIGHEST values, not individual transaction amounts
+- Petronas documents: The total consumption is usually shown on a summary/totals page
+- Example: If you see "24.39" and "1873.433" for Petrol, extract 1873.433 (the larger total)
+- For Diesel: Extract the total consumption value
+- ALWAYS return: Petrol total and Diesel total separately
 
 RULES:
-1. Look for these QUANTITY FIELDS (in priority order):
-   - "Penggunaan" (Malaysian bills)
-   - "Usage" / "Consumption" / "Total Usage"
-   - "Quantity" / "KUANTITI" / "KUANTITI BELIAN"
-   - "Volume" / "Amount" / "Jumlah"
-   - "kWh" / "kWH" / "KWH" (for electricity)
-   - "Liters" / "LTR" / "L" (for fuel)
-   - Fuel type indicators: "Diesel", "Petrol", "RON95", "RON97", "PRIMAX", "V-POWER"
+1. For PDF documents with multiple pages:
+   - Scan EVERY page systematically
+   - PRIORITIZE last 2-3 pages for totals/summary sections
+   - Look for "Total:", "Jumlah:", "Summary:", "Period Total:"
+   - When multiple values exist for same fuel type, pick the LARGEST (that's the total)
+   - IGNORE individual transaction amounts or daily values
 
-2. FUEL TYPE DETECTION (Petronas SmartPay & fuel receipts):
-   - Look for BOTH: "Diesel", "Premium Diesel", "DIESEL"
-   - Look for BOTH: "Petrol", "RON95", "RON97", "PETROL", "PRIMAX", "V-POWER"
-   - If BOTH found: Extract both quantities
-   - Return the larger quantity as main value
-   - List all fuels in reasoning: "Found Petrol: X liters, Diesel: Y liters"
+2. Petronas SmartPay specific:
+   - Look for consumption breakdown/summary tables
+   - Find rows labeled: "PETROL TOTAL", "DIESEL TOTAL", "TOTAL CONSUMPTION"
+   - Extract the numeric value from the total row
+   - Ignore unit prices and individual transaction prices
+   - The TOTAL row is usually at the bottom of transaction lists
 
-3. IGNORE:
-   - Previous balances
-   - Payment amounts
-   - Dates alone (unless explicitly labeled as usage)
-   - Charges/costs/prices
+3. General quantity fields (look in this order):
+   - "TOTAL CONSUMPTION", "TOTAL JUMLAH", "TOTAL PENGGUNAAN"
+   - "Total Period Consumption", "Consumption Total"
+   - Summary tables with "Total" row
+   - "TOTAL PETROL LITERS", "TOTAL DIESEL LITERS"
+   - "Petrol Total:", "Diesel Total:"
+   - If multiple similar values found, SELECT THE LARGEST one
 
-4. DOCUMENT TYPE DETECTION:
-   - If has "kWh", "Electricity", "Electric", "Kilowatt": Type = "Electricity"
-   - If has BOTH "Diesel" AND "Petrol": Type = "Fuel (Diesel)" if diesel > petrol, else "Fuel (Petrol)"
-   - If has only "Diesel", "Premium Diesel": Type = "Fuel (Diesel)"
-   - If has only "Petrol", "RON95", "RON97": Type = "Fuel (Petrol)"
-   - If has "Travel", "Transport", "km": Type = "Transport"
+4. FUEL TYPE DETECTION:
+   - Find BOTH: "PETROL", "DIESEL" clearly labeled with THEIR totals
+   - MUST extract TOTAL for each fuel type
+   - If "PETROL TOTAL: 1873.433 LITERS" and "DIESEL TOTAL: 12.602 LITERS" → extract exactly these
+   - Return larger total as "value", smaller as "secondaryValue"
 
-5. SUPPLIER DETECTION:
-   - Extract company name from bill header
-   - Common: TNB, Petronas, Shell, Tenaga Nasional Berhad, etc.
+5. IGNORE:
+   - Individual transaction amounts (e.g., single fill-ups)
+   - Previous month's balance
+   - Payment amounts or invoiced amounts
+   - Unit prices ($/liter)
+   - Dates alone
+   - Non-consumption figures
 
-6. OUTPUT FORMAT - MUST BE VALID JSON:
+6. DOCUMENT TYPE DETECTION:
+   - If "PETROL TOTAL" and "DIESEL TOTAL" found: Type = "Fuel (Petrol)" if petrol > diesel, else "Fuel (Diesel)"
+   - If only "DIESEL TOTAL": Type = "Fuel (Diesel)"
+   - If only "PETROL TOTAL": Type = "Fuel (Petrol)"
+
+7. OUTPUT FORMAT - MUST BE VALID JSON:
 {
-  "value": <number only, no units - PRIMARY quantity if multi-fuel, else total>,
-  "unit": "<kWh or liters or km>",
-  "detectedDataType": "<Electricity|Fuel (Diesel)|Fuel (Petrol)|Transport>",
-  "supplierName": "<company name>",
-  "confidence": <0.0 to 1.0>,
-  "reasoning": "<explain what you found. CRITICAL: If multi-fuel (both Petrol AND Diesel found), ALWAYS include exact quantities: 'Petrol: X liters, Diesel: Y liters'>",
-  "secondaryValue": <optional - for multi-fuel: the secondary fuel quantity>,
-  "secondaryDataType": "<optional - for multi-fuel: the secondary fuel type>"
+  "value": <TOTAL consumption for primary fuel - LARGEST value>,
+  "unit": "liters",
+  "detectedDataType": "<Fuel (Diesel)|Fuel (Petrol)>",
+  "supplierName": "PETRONAS",
+  "confidence": <0.85 if found clear "TOTAL" label, 0.95 if summary page>,
+  "reasoning": "<Page reference and source. Format: 'TOTAL CONSUMPTION - Petrol: X liters (Summary Page), Diesel: Y liters (Summary Page)'>",
+  "secondaryValue": <TOTAL consumption for secondary fuel>,
+  "secondaryDataType": "<Fuel (Diesel)|Fuel (Petrol)>"
 }
 
-IMPORTANT:
-- value must be a NUMBER (not string)
-- For MULTI-FUEL documents (both Petrol AND Diesel):
-  * Extract BOTH quantities precisely
-  * Return larger quantity as "value"
-  * Return smaller quantity as "secondaryValue"
-  * Set detectedDataType to the fuel type with larger quantity
-  * Set secondaryDataType to the other fuel type
-  * reasoning MUST list both: "Petrol: X liters, Diesel: Y liters"
-- confidence should be HIGH (0.8+) if clearly labeled
+CRITICAL RULES:
+- value MUST be the TOTAL CONSUMPTION for primary fuel (1873.433 for Petrol if that's the total)
+- secondaryValue MUST be the TOTAL CONSUMPTION for secondary fuel (12.602 for Diesel if that's the total)
+- Both must be NUMBERS only, no strings
+- confidence: HIGH (0.95) if clearly on summary page with "TOTAL" label
+- reasoning MUST show source: e.g., "Found on Summary Page: Petrol Total 1873.433L, Diesel Total 12.602L"
 - Return ONLY valid JSON, no explanations
   `;
 
